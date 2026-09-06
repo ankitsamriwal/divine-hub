@@ -23,11 +23,18 @@
       <span class="brand-sub">आरती · चालीसा · स्तोत्रम् · मंत्र</span>
     </div>
   </div>
-  <div class="header-search">
-    <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
+  <div class="header-right">
+    <nav class="view-tabs" aria-label="Sections">
+      <button id="tabPrayers" class="view-tab active">Prayers</button>
+      <button id="tabJapa" class="view-tab">Japa Counter</button>
+    </nav>
+    <div class="header-search">
+      <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
+    </div>
   </div>
 </header>
 
+<div id="prayerSection">
 <section class="hero">
   <div class="hero-om" aria-hidden="true">ॐ</div>
   <h2>A quiet place for sacred sound</h2>
@@ -37,6 +44,74 @@
 <nav class="deity-filter" id="deityFilter" aria-label="Filter by deity"></nav>
 
 <main id="prayerGrid" class="prayer-grid"></main>
+</div>
+
+<section id="japaSection" class="japa-section" hidden>
+  <div class="japa-hero">
+    <h2>Japa Counter</h2>
+    <p>A digital mala for your daily practice. Tap the mala — or let it listen. 108 beads, one breath at a time.</p>
+  </div>
+
+  <div class="japa-layout">
+    <div class="mala-stage">
+      <svg id="malaSvg" viewBox="0 0 340 340" role="button" tabindex="0" aria-label="Tap to count">
+        <circle id="progressTrack" cx="170" cy="170" r="158" fill="none" stroke="rgba(226,169,78,0.15)" stroke-width="4"/>
+        <circle id="progressRing" cx="170" cy="170" r="158" fill="none" stroke="#e2a94e" stroke-width="4"
+          stroke-linecap="round" transform="rotate(-90 170 170)"/>
+        <g id="beadRing"></g>
+      </svg>
+      <button id="malaTap" class="mala-tap" aria-label="Count one recitation">
+        <span id="japaCount" class="japa-count">0</span>
+        <span id="japaTarget" class="japa-target">of 108</span>
+        <span class="japa-hint">tap to count</span>
+      </button>
+    </div>
+
+    <div class="japa-side">
+      <div class="japa-block">
+        <span class="japa-label">Mantra</span>
+        <select id="mantraSelect">
+          <option value="om namah shivaya" data-dev="ॐ नमः शिवाय">Om Namah Shivaya — ॐ नमः शिवाय</option>
+          <option value="om gam ganapataye namah" data-dev="ॐ गं गणपतये नमः">Om Gam Ganapataye Namah — ॐ गं गणपतये नमः</option>
+          <option value="hare krishna hare krishna" data-dev="हरे कृष्ण हरे कृष्ण">Hare Krishna — हरे कृष्ण</option>
+          <option value="om namo narayanaya" data-dev="ॐ नमो नारायणाय">Om Namo Narayanaya — ॐ नमो नारायणाय</option>
+          <option value="jai shri ram" data-dev="जय श्री राम">Jai Shri Ram — जय श्री राम</option>
+          <option value="gayatri" data-dev="ॐ भूर्भुवः स्वः">Gayatri — ॐ भूर्भुवः स्वः</option>
+          <option value="custom" data-dev="">Custom…</option>
+        </select>
+        <input id="mantraCustom" type="text" placeholder="Your mantra (for listening mode)" hidden>
+        <div id="mantraDev" class="mantra-dev">ॐ नमः शिवाय</div>
+      </div>
+
+      <div class="japa-block">
+        <span class="japa-label">Round length</span>
+        <div class="preset-row">
+          <button class="preset" data-n="21">21</button>
+          <button class="preset active" data-n="108">108</button>
+          <button class="preset" data-n="custom">Custom</button>
+          <input id="customTarget" type="number" min="1" max="1000" value="54" hidden>
+        </div>
+      </div>
+
+      <div class="japa-block">
+        <span class="japa-label">Mode</span>
+        <div class="mode-row">
+          <button id="modeTap" class="mode-btn active">Tap</button>
+          <button id="modeListen" class="mode-btn">Listen <span class="exp-tag">experimental</span></button>
+        </div>
+        <p id="listenStatus" class="listen-status" hidden></p>
+      </div>
+
+      <div class="japa-block japa-stats">
+        <div><span id="streakDays" class="stat-num">0</span><span class="stat-lbl">day streak 🔥</span></div>
+        <div><span id="todayCount" class="stat-num">0</span><span class="stat-lbl">today</span></div>
+        <div><span id="roundsToday" class="stat-num">0</span><span class="stat-lbl">rounds today</span></div>
+      </div>
+
+      <button id="resetRound" class="reset-btn">Reset round</button>
+    </div>
+  </div>
+</section>
 
 <div id="prayerView" class="prayer-view" hidden>
   <div class="prayer-view-inner">
@@ -72,5 +147,6 @@
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="japa.js"></script>
 </body>
 </html>
