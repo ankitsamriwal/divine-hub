@@ -5,7 +5,7 @@
 
 const ALLOWED_ORIGINS = new Set([
   'https://ankitsamriwal.github.io',
-  'https://aarti.vercel.app',
+  'https://roadtodivinity.vercel.app',
   'https://prarthana-six.vercel.app'
 ]);
 const MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
