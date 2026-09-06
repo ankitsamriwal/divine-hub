@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divine Hub — Aartis, Stotrams & Mantras</title>
+<meta name="description" content="A serene home for sacred Hindu prayers — aartis, chalisas, stotrams and mantras with Devanagari lyrics, transliteration, full English meaning, and audio narration.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
+</head>
+<body>
+
+<div class="dusk-glow" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-om">ॐ</span>
+    <div class="brand-text">
+      <h1>Divine Hub</h1>
+      <span class="brand-sub">आरती · चालीसा · स्तोत्रम् · मंत्र</span>
+    </div>
+  </div>
+  <div class="header-search">
+    <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-om" aria-hidden="true">ॐ</div>
+  <h2>A quiet place for sacred sound</h2>
+  <p>Traditional aartis, chalisas, stotrams and mantras — with the original Devanagari, a gentle transliteration, the full meaning in English, and a voice to read them aloud.</p>
+</section>
+
+<nav class="deity-filter" id="deityFilter" aria-label="Filter by deity"></nav>
+
+<main id="prayerGrid" class="prayer-grid"></main>
+
+<div id="prayerView" class="prayer-view" hidden>
+  <div class="prayer-view-inner">
+    <button class="close-btn" id="closePrayer" aria-label="Close">✕</button>
+    <div id="prayerContent"></div>
+  </div>
+</div>
+
+<button id="chatFab" class="chat-fab" aria-label="Open the guide">
+  <span>🙏</span>
+</button>
+
+<div id="chatPanel" class="chat-panel" hidden>
+  <div class="chat-header">
+    <div>
+      <strong>Divine Guide</strong>
+      <span class="chat-sub">ask about prayers, meanings, deities</span>
+    </div>
+    <button id="chatClose" class="chat-close" aria-label="Close chat">✕</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div id="chatChips" class="chat-chips"></div>
+  <form id="chatForm" class="chat-form">
+    <input id="chatInput" type="text" placeholder="Ask anything…" autocomplete="off" aria-label="Ask the guide">
+    <button type="submit" aria-label="Send">➤</button>
+  </form>
+</div>
+
+<footer class="site-footer">
+  <p>These prayers are centuries-old traditional works in the public domain, compiled with care and reverence. Texts follow widely sung canonical versions; minor regional variations exist.</p>
+  <p class="footer-om">॥ शान्तिः शान्तिः शान्तिः ॥</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
