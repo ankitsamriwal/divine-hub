@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.roadtodivinity",
+    "sha256_cert_fingerprints": ["0D:36:F2:83:5B:4A:28:22:F3:53:B1:CD:EF:C1:EE:05:71:F0:EF:6D:FD:4B:26:BA:4A:4B:B5:9E:3B:9A:6F:DD"]
+  }
+}]
