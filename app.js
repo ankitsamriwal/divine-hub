@@ -570,11 +570,12 @@
     const qRaw = q.toLowerCase().trim();
 
     // Festival questions
+    const prayerMentioned = PRAYERS.some(pp => qRaw.includes(pp.title.toLowerCase()));
     const festHit = FESTIVALS.find(f => {
       const n = f.name.toLowerCase().split(' ')[0];
       return n.length > 3 && qRaw.includes(n);
     });
-    if (festHit) {
+    if (festHit && !prayerMentioned && !/(mean|meaning|arth|matlab|chalisa|aarti|stotra|mantra|ashtakam|vandana)/.test(qRaw)) {
       return festHit.name + ' (' + festHit.dev + ') falls on ' + fmtFestivalDate(new Date(festHit.d2026 + 'T00:00:00')) + ' in 2026 and ' + fmtFestivalDate(new Date(festHit.d2027 + 'T00:00:00')) + ' in 2027.\n\n' + festHit.note + '\n\nSee the Festivals tab for the full calendar.';
     }
     if (/(festival|upcoming|next.*(festival|tyohar|tyohaar)|panchang|calendar|tyohar|tyohaar)/.test(qRaw)) {
