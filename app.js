@@ -338,6 +338,13 @@
     return parts.join('\n\n') + '\n\nDEITY NOTES:\n' + deityNotes;
   }
 
+  const FESTIVALS_TEXT = '\n\nFESTIVAL CALENDAR (verified 2026-2027):\n' + FESTIVALS.map(f =>
+    '- ' + f.name + ' (' + f.dev + '): 2026 on ' + f.d2026 + ', 2027 on ' + f.d2027 + '. ' + f.note).join('\n');
+  const WHY_TEXT = '\n\nPUJA ITEMS - WHY THEY ARE USED:\n' + WHY_CATEGORIES.map(c =>
+    c.title + ': ' + c.items.map(i => i.item + ' - ' + i.role + ' ' + i.traditional).join(' | ')).join('\n');
+  const GUIDES_TEXT = '\n\nPUJA GUIDES (samagri + steps available in the app):\n' + PUJA_GUIDES.map(g =>
+    '- ' + g.title + ' (' + g.dev + '): ' + g.about + ' When: ' + g.when).join('\n');
+
   const SYSTEM_PROMPT = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
     'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
     'If asked about a prayer, deity or text not in the corpus, say gently that it is not in this collection yet and offer what is here. ' +
@@ -542,12 +549,6 @@
 
 
   /* ---------- expansion wrappers: festivals, why, guides ---------- */
-  const FESTIVALS_TEXT = '\n\nFESTIVAL CALENDAR (verified 2026-2027):\n' + FESTIVALS.map(f =>
-    '- ' + f.name + ' (' + f.dev + '): 2026 on ' + f.d2026 + ', 2027 on ' + f.d2027 + '. ' + f.note).join('\n');
-  const WHY_TEXT = '\n\nPUJA ITEMS - WHY THEY ARE USED:\n' + WHY_CATEGORIES.map(c =>
-    c.title + ': ' + c.items.map(i => i.item + ' - ' + i.role + ' ' + i.traditional).join(' | ')).join('\n');
-  const GUIDES_TEXT = '\n\nPUJA GUIDES (samagri + steps available in the app):\n' + PUJA_GUIDES.map(g =>
-    '- ' + g.title + ' (' + g.dev + '): ' + g.about + ' When: ' + g.when).join('\n');
 
   function corpusContext() { return corpusContextCore() + FESTIVALS_TEXT + WHY_TEXT + GUIDES_TEXT; }
 
