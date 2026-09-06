@@ -27,7 +27,7 @@ jobs:
         curl -sf -X PUT \
           "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME" \
           -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-          -F "metadata={\"main_module\":\"worker.js\",\"compatibility_date\":\"2026-09-06\"};type=application/json" \
+          -F "metadata={\"main_module\":\"worker.js\",\"compatibility_date\":\"2026-09-06\",\"workers_dev\":true};type=application/json" \
           -F "worker.js=@worker/worker.js;type=application/javascript+module" \
           | python3 -c "import json,sys;d=json.load(sys.stdin);print('upload success:',d.get('success'))"
 
@@ -48,11 +48,12 @@ jobs:
 
     - name: Enable workers.dev route
       run: |
-        curl -sf -X PUT \
+        resp=$(curl -s -X PUT \
           "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME/subdomain" \
           -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
           -H "Content-Type: application/json" \
-          --data '{"enabled":true}' | python3 -c "import json,sys;print('route enabled:',json.load(sys.stdin).get('success'))"
+          --data '{"enabled":true}')
+        echo "route enable response: $resp"
 
     - name: Smoke test (CORS + endpoint shape)
       run: |
