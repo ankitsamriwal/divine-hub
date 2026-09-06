@@ -91,6 +91,15 @@ export default {
         lastErr = 'empty_response';
       } catch (e) { lastErr = 'fetch_error'; }
     }
-    return new Response(JSON.stringify({ error: lastErr, attempts: attempts }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
+    // all models failed - ask Gemini which models this key can use
+    let available = null;
+    try {
+      const lr = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(env.GEMINI_API_KEY) + '&pageSize=100');
+      const ld = await lr.json();
+      if (lr.ok && ld && ld.models) {
+        available = ld.models.filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace('models/', ''));
+      } else { available = ['list_failed_' + lr.status]; }
+    } catch (e) { available = ['list_error']; }
+    return new Response(JSON.stringify({ error: lastErr, attempts: attempts, available_models: available }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
   }
 };
