@@ -324,7 +324,7 @@
     history.push({ role: 'user', text: question }, { role: 'model', text: data.text.trim() });
     return data.text.trim();
   }
-  const LLM_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+  const LLM_MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
   const LLM_URL = (model, key) =>
     'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key);
 
