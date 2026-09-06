@@ -15,9 +15,7 @@ jobs:
 
     - name: Deploy worker via wrangler
       run: |
-        npx -y wrangler@latest deploy worker/worker.js \
-          --name "$WORKER_NAME" \
-          --compatibility-date 2026-09-06
+        cd worker && npx -y wrangler@latest deploy
 
     - name: Set Gemini key as worker secret
       run: |
