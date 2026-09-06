@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -39,9 +39,6 @@
       <button id="tabPrayers" class="view-tab active">Prayers</button>
       <button id="tabJapa" class="view-tab">Japa Counter</button>
       <button id="tabFestivals" class="view-tab">Festivals</button>
-      <button id="tabGuides" class="view-tab">Puja Guides</button>
-      <button id="tabWhy" class="view-tab">Why Puja?</button>
-      <button id="tabNearby" class="view-tab">Nearby</button>
     </nav>
     <div class="header-search">
       <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
@@ -50,6 +47,20 @@
 </header>
 
 <div id="prayerSection">
+<nav class="quick-icons" aria-label="Guides and places">
+  <button id="tabGuides" class="quick-icon" aria-label="Puja Guides">
+    <span class="qi-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.6 5 8.6 4.2 6 4.2c-1 0-2 .14-3 .42V18.6c1-.28 2-.42 3-.42 2.6 0 4.6.8 6 2.3 1.4-1.5 3.4-2.3 6-2.3 1 0 2 .14 3 .42V4.62c-1-.28-2-.42-3-.42-2.6 0-4.6.8-6 2.3z"/><path d="M12 6.5v14"/></svg></span>
+    <span class="qi-label">Puja Guides</span>
+  </button>
+  <button id="tabWhy" class="quick-icon" aria-label="Why Puja?">
+    <span class="qi-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M9.4 9.2a2.7 2.7 0 1 1 3.8 2.7c-.8.35-1.2.9-1.2 1.7v.55"/><circle cx="12" cy="16.9" r="0.4" fill="currentColor" stroke="none"/></svg></span>
+    <span class="qi-label">Why Puja?</span>
+  </button>
+  <button id="tabNearby" class="quick-icon" aria-label="Nearby">
+    <span class="qi-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.7-5.3-6.7-10.2a6.7 6.7 0 0 1 13.4 0C18.7 15.7 12 21 12 21z"/><circle cx="12" cy="10.6" r="2.4"/></svg></span>
+    <span class="qi-label">Nearby</span>
+  </button>
+</nav>
 <section class="hero">
   <div class="hero-om" aria-hidden="true">ॐ</div>
   <h2>A quiet place for sacred sound</h2>
@@ -222,13 +233,13 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=10"></script>
-<script src="data2.js?v=10"></script>
-<script src="festivals.js?v=10"></script>
-<script src="guides.js?v=10"></script>
-<script src="why.js?v=10"></script>
-<script src="app.js?v=10"></script>
-<script src="japa.js?v=10"></script>
-<script src="sections.js?v=10"></script>
+<script src="data.js?v=11"></script>
+<script src="data2.js?v=11"></script>
+<script src="festivals.js?v=11"></script>
+<script src="guides.js?v=11"></script>
+<script src="why.js?v=11"></script>
+<script src="app.js?v=11"></script>
+<script src="japa.js?v=11"></script>
+<script src="sections.js?v=11"></script>
 </body>
 </html>
