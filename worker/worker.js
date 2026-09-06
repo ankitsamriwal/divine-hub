@@ -72,6 +72,7 @@ export default {
     };
 
     let lastErr = 'llm_unavailable';
+    const attempts = [];
     for (const model of MODELS) {
       try {
         const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(env.GEMINI_API_KEY), {
@@ -79,6 +80,7 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        attempts.push(model + ':' + res.status);
         if (!res.ok) { lastErr = 'gemini_http_' + res.status; continue; }
         const data = await res.json();
         const text = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
@@ -89,6 +91,6 @@ export default {
         lastErr = 'empty_response';
       } catch (e) { lastErr = 'fetch_error'; }
     }
-    return new Response(JSON.stringify({ error: lastErr }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: lastErr, attempts: attempts }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
   }
 };
