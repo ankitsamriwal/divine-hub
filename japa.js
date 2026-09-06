@@ -14,6 +14,7 @@
     tabJapa.classList.toggle('active', which === 'japa');
     prayerSection.hidden = which !== 'prayers';
     japaSection.hidden = which !== 'japa';
+    window.scrollTo(0, 0);
     if (which === 'japa') drawMala();
   }
   tabPrayers.addEventListener('click', () => showView('prayers'));
