@@ -13,7 +13,7 @@
   let activeDeity = 'All';
   let searchQuery = '';
 
-  const deityOrder = ['All', 'Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati'];
+  const deityOrder = ['All', 'Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati', 'Radha', 'Surya', 'Sai Baba', 'Sheetla Mata', 'Santoshi Mata', 'Bhairav'];
 
   /* ---------- filter chips ---------- */
   deityOrder.forEach(d => {
@@ -103,7 +103,7 @@
 
   function renderPrayerView() {
     const p = currentPrayer;
-    const langLabel = p.lang === 'sa' ? 'Sanskrit' : 'Hindi';
+    const langLabel = p.lang === 'sa' ? 'Sanskrit' : (p.lang === 'mr' ? 'Marathi' : 'Hindi');
     prayerContent.innerHTML = `
       <div class="pv-deity">${p.deityDev} · ${p.deity} — ${p.type}</div>
       <h2 class="pv-title">${p.title}</h2>
@@ -172,18 +172,42 @@
     synth.onvoiceschanged = loadVoices;
   }
 
-  function pickVoice(pref) {
+  const DEITY_VOICE_GENDER = {
+    'Lakshmi': 'f', 'Durga': 'f', 'Saraswati': 'f', 'Radha': 'f',
+    'Sheetla Mata': 'f', 'Santoshi Mata': 'f',
+    'Shiv': 'm', 'Ganesh': 'm', 'Hanuman': 'm', 'Vishnu': 'm',
+    'Krishna': 'm', 'Surya': 'm', 'Sai Baba': 'm', 'Bhairav': 'm'
+  };
+  // Best-effort gender detection from voice display names.
+  const FEMALE_HINTS = /female|woman|heera|kalpana|swara|lekha|madhur|aditi|raveena|neerja|kanya|susan|zira|samantha|karen|moira|tessa|fiona|catherine|shelley|sonia|samantha/i;
+  const MALE_HINTS = /male(?!.*female)|man|hemant|prabhat|ravi|mohan|arjun|daniel|fred|alex|george|james|david|aaron|arthur|gordon|rishi/i;
+  function voiceGender(v) {
+    const n = v.name || '';
+    if (FEMALE_HINTS.test(n)) return 'f';
+    if (MALE_HINTS.test(n) && !/female/i.test(n)) return 'm';
+    return null;
+  }
+  function pickVoice(pref, gender) {
     if (!voices.length) loadVoices();
     const norm = v => (v.lang || '').toLowerCase();
+    let pool;
     if (pref === 'hi') {
-      return voices.find(v => norm(v).startsWith('hi'))
-        || voices.find(v => norm(v).startsWith('sa'))
-        || voices.find(v => norm(v) === 'en-in')
-        || null;
+      pool = [voices.filter(v => norm(v).startsWith('hi')),
+              voices.filter(v => norm(v).startsWith('sa')),
+              voices.filter(v => norm(v) === 'en-in')];
+    } else {
+      pool = [voices.filter(v => norm(v) === 'en-in'),
+              voices.filter(v => norm(v).startsWith('en'))];
     }
-    return voices.find(v => norm(v) === 'en-in')
-      || voices.find(v => norm(v).startsWith('en'))
-      || null;
+    for (const group of pool) {
+      if (!group.length) continue;
+      if (gender) {
+        const g = group.find(v => voiceGender(v) === gender);
+        if (g) return g;
+      }
+      return group[0];
+    }
+    return null;
   }
 
   function stopSpeech() {
@@ -217,7 +241,7 @@
     u.lang = langTag;
     u.rate = rate;
     u.pitch = 1;
-    const v = pickVoice(voicePref);
+    const v = pickVoice(voicePref, DEITY_VOICE_GENDER[p.deity]);
     if (v) u.voice = v;
     const note = document.getElementById('ttsNote');
     if (voicePref === 'hi' && v && !(v.lang || '').toLowerCase().startsWith('hi') && !(v.lang || '').toLowerCase().startsWith('sa')) {
@@ -287,7 +311,7 @@
   const LLM_URL = (model, key) =>
     'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key);
 
-  function corpusContext() {
+  function corpusContextCore() {
     const parts = PRAYERS.map(p => {
       const meanings = p.stanzas.map((s, i) => (i + 1) + '. ' + s.meaning).join('\n');
       return '### ' + p.title + ' (' + p.titleDev + ') — ' + p.type + ' of ' + p.deity +
@@ -421,7 +445,7 @@
     return score;
   }
 
-  function botAnswer(q) {
+  function botAnswerCore(q) {
     const qRaw = q.toLowerCase().trim();
     const qTokens = tokens(q);
 
@@ -488,6 +512,51 @@
     }
 
     return 'I could not place that one. Try asking about a deity (Hanuman, Ganesh, Shiv, Lakshmi, Vishnu, Krishna, Durga, Saraswati), a prayer by name, an occasion like Diwali or Navratri, or a need — strength, wisdom, prosperity, peace.';
+  }
+
+
+  /* ---------- expansion wrappers: festivals, why, guides ---------- */
+  const FESTIVALS_TEXT = '\n\nFESTIVAL CALENDAR (verified 2026-2027):\n' + FESTIVALS.map(f =>
+    '- ' + f.name + ' (' + f.dev + '): 2026 on ' + f.d2026 + ', 2027 on ' + f.d2027 + '. ' + f.note).join('\n');
+  const WHY_TEXT = '\n\nPUJA ITEMS - WHY THEY ARE USED:\n' + WHY_CATEGORIES.map(c =>
+    c.title + ': ' + c.items.map(i => i.item + ' - ' + i.role + ' ' + i.traditional).join(' | ')).join('\n');
+  const GUIDES_TEXT = '\n\nPUJA GUIDES (samagri + steps available in the app):\n' + PUJA_GUIDES.map(g =>
+    '- ' + g.title + ' (' + g.dev + '): ' + g.about + ' When: ' + g.when).join('\n');
+
+  function corpusContext() { return corpusContextCore() + FESTIVALS_TEXT + WHY_TEXT + GUIDES_TEXT; }
+
+  function botAnswer(q) {
+    const qRaw = q.toLowerCase().trim();
+
+    // Festival questions
+    const festHit = FESTIVALS.find(f => {
+      const n = f.name.toLowerCase().split(' ')[0];
+      return n.length > 3 && qRaw.includes(n);
+    });
+    if (festHit) {
+      return festHit.name + ' (' + festHit.dev + ') falls on ' + fmtFestivalDate(new Date(festHit.d2026 + 'T00:00:00')) + ' in 2026 and ' + fmtFestivalDate(new Date(festHit.d2027 + 'T00:00:00')) + ' in 2027.\n\n' + festHit.note + '\n\nSee the Festivals tab for the full calendar.';
+    }
+    if (/(festival|upcoming|next.*(festival|tyohar|tyohaar)|panchang|calendar|tyohar|tyohaar)/.test(qRaw)) {
+      const up = festivalsUpcoming(new Date()).slice(0, 3);
+      return 'The next festivals on the calendar:\n' + up.map(r => '• ' + r.f.name + ' — ' + fmtFestivalDate(r.date)).join('\n') + '\n\nThe Festivals tab has the full verified 2026-2027 calendar.';
+    }
+
+    // Why-database questions
+    if (/^why |what is |what\'s |significance|meaning of|why do|why are/.test(qRaw) || /(camphor|kapoor|kumkum|roli|haldi|turmeric|chandan|sandal|sindoor|kesar|saffron|vibhuti|bhasma|diya|deepak|lamp|agarbatti|incense|dhoop|guggal|loban|ittar|panchamrit|akshat|rice|coconut|nariyal|paan|betel|supari|honey|milk|curd|ghee|modak|laddu|tulsi|bel patra|bilva|durva|datura|lotus|kamal|marigold|rose|harsingar|parijat|mango leaf|moli|kalava|red thread|chunri|janeyu|kalash|lota|thali|ghanta|bell|shankh|conch|navadhanya|til|sesame|gangajal|dakshina|havan)/.test(qRaw)) {
+      const hits = whyFind(qRaw);
+      if (hits.length) {
+        const it = hits[0];
+        return it.item + ' (' + it.dev + ')\n\n' + it.role + '\n\nTraditionally: ' + it.traditional + '\n\nPractically: ' + it.science + '\n\nThe Why Puja? tab has 58 such entries across seven categories.';
+      }
+    }
+
+    // Puja guide questions
+    if (/(how to|how do|vidhi|samagri|checklist|griha pravesh|griha|housewarming|satyanarayan|sunderkand|sundarakhand|sthapana|diwali puja|lakshmi puja|ganesh puja|path|paath)/.test(qRaw)) {
+      const g = PUJA_GUIDES.find(x => qRaw.includes(x.title.split(' ')[0].toLowerCase())) || PUJA_GUIDES[0];
+      return g.title + ' (' + g.dev + ') — ' + g.about + '\n\nWhen: ' + g.when + '\n\nThe full guide — ' + g.samagri.length + ' samagri items with quantities and ' + g.steps.length + ' steps — is in the Puja Guides tab.';
+    }
+
+    return botAnswerCore(q);
   }
 
   form.addEventListener('submit', e => {

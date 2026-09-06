@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -27,6 +27,10 @@
     <nav class="view-tabs" aria-label="Sections">
       <button id="tabPrayers" class="view-tab active">Prayers</button>
       <button id="tabJapa" class="view-tab">Japa Counter</button>
+      <button id="tabFestivals" class="view-tab">Festivals</button>
+      <button id="tabGuides" class="view-tab">Puja Guides</button>
+      <button id="tabWhy" class="view-tab">Why Puja?</button>
+      <button id="tabNearby" class="view-tab">Nearby</button>
     </nav>
     <div class="header-search">
       <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
@@ -120,6 +124,46 @@
   </div>
 </div>
 
+
+<section id="festivalsSection" class="info-section" hidden>
+  <h2 class="info-title">उत्सव · Festivals 2026-2027</h2>
+  <p class="info-sub">Verified dates from Drik Panchang and national holiday calendars. Hindu festivals follow the lunar calendar; regional observance can differ by a day.</p>
+  <h3 class="info-h3">Upcoming</h3>
+  <div id="festivalUpcoming" class="festival-upcoming"></div>
+  <h3 class="info-h3">Full calendar</h3>
+  <div id="festivalTable" class="festival-table"></div>
+</section>
+
+<section id="guidesSection" class="info-section" hidden>
+  <h2 class="info-title">पूजा विधि · Puja Guides</h2>
+  <p class="info-sub">Household-scale samagri lists with quantities and step outlines. Your family pandit's word always wins where traditions differ.</p>
+  <div id="guideList" class="guide-list"></div>
+</section>
+
+<section id="whySection" class="info-section" hidden>
+  <h2 class="info-title">पूजा सामग्री · Why is this used in puja?</h2>
+  <p class="info-sub">The purpose and reasoning — traditional, and where it exists, practical — behind the things on a puja thali.</p>
+  <input id="whySearch" class="why-search" type="search" placeholder="Search: camphor, tulsi, kalash, red thread…" aria-label="Search puja items">
+  <div id="whyList" class="why-list"></div>
+</section>
+
+<section id="nearbySection" class="info-section" hidden>
+  <h2 class="info-title">नज़दीक · Nearby</h2>
+  <p class="info-sub">Find temples and puja-samagri shops around you, and pandit services online. Location is used only in your browser to build a map link.</p>
+  <div class="nearby-actions">
+    <button id="nearbyLocate" class="btn-gold">📍 Use my location</button>
+    <span id="nearbyStatus" class="nearby-status"></span>
+  </div>
+  <div id="nearbyLinks" class="nearby-links"></div>
+  <h3 class="info-h3">Book a pandit online</h3>
+  <div class="pandit-list">
+    <a class="pandit-card" href="https://smartpuja.com" target="_blank" rel="noopener"><strong>SmartPuja</strong><span>Book verified pandits for 400+ pujas across major Indian cities, with samagri included.</span></a>
+    <a class="pandit-card" href="https://www.99pandit.com" target="_blank" rel="noopener"><strong>99Pandit</strong><span>Pandit booking for home pujas, path and ceremonies, online and in person.</span></a>
+    <a class="pandit-card" href="https://pujanpujari.com" target="_blank" rel="noopener"><strong>Puja N Pujari</strong><span>Puja services and samagri kits delivered, across India and abroad.</span></a>
+    <a class="pandit-card" href="https://www.drikpanchang.com" target="_blank" rel="noopener"><strong>Drik Panchang</strong><span>The reference panchang — muhurats, tithis and festival timings for your exact city.</span></a>
+  </div>
+</section>
+
 <button id="chatFab" class="chat-fab" aria-label="Open the guide">
   <span>🙏</span>
 </button>
@@ -156,8 +200,13 @@
   <p class="footer-om">॥ शान्तिः शान्तिः शान्तिः ॥</p>
 </footer>
 
-<script src="data.js?v=4"></script>
-<script src="app.js?v=4"></script>
-<script src="japa.js?v=4"></script>
+<script src="data.js?v=5"></script>
+<script src="data2.js?v=5"></script>
+<script src="festivals.js?v=5"></script>
+<script src="guides.js?v=5"></script>
+<script src="why.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="japa.js?v=5"></script>
+<script src="sections.js?v=5"></script>
 </body>
 </html>

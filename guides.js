@@ -1,0 +1,158 @@
+// Divine Hub — puja guides: samagri lists with quantities + step outlines.
+// Household-scale quantities; a pandit may adjust to family tradition.
+
+const PUJA_GUIDES = [
+  {
+    id: 'satyanarayan-puja',
+    title: 'Satyanarayan Puja',
+    dev: 'सत्यनारायण पूजा',
+    deity: 'Vishnu',
+    when: 'Any Purnima (full moon), or days of gratitude — new home, new job, weddings, birthdays, exam results. Evening is customary.',
+    about: 'The most widely performed household puja in India: Lord Vishnu is worshipped as Satya (Truth) through the five-chapter katha, ending with the Jai Lakshmi Ramana aarti and sheera (panjiri) prasad.',
+    samagri: [
+      'Haldi (turmeric) powder — 50 g', 'Kumkum / roli — 1 small pack', 'Akshat (whole rice) — 250 g',
+      'Flowers: marigold + rose — 2-3 dozen; flower petals for offering — 1 bowl',
+      'Tulsi leaves — 1 sprig (essential; the puja is incomplete without tulsi)',
+      'Panchamrit set: milk 250 ml, curd 100 g, ghee 50 g, honey 2 tbsp, sugar 2 tbsp',
+      'Bananas — 6; seasonal fruits — 1 kg; coconut — 2 (1 for kalash, 1 for bhog)',
+      'Panjiri / sheera prasad: wheat flour 500 g, ghee 250 g, sugar 250 g, dry fruits 100 g',
+      'Supari (betel nut) — 5; paan (betel leaves) — 10; cloves + cardamom — small pack each',
+      'Kalash (copper/steel pot) — 1; mango or ashoka leaves — 5-7; red cloth — 1.25 m; yellow cloth — 1 m',
+      'Chowki (low wooden platform) — 1; Satyanarayan murti or photo — 1',
+      'Diya (oil/ghee lamp) — 2; cotton wicks; ghee for lamp — 100 g',
+      'Agarbatti (incense) — 1 pack; dhoop — 1; camphor — 1 small pack; aarti thali — 1',
+      'Moli (sacred red thread) — 1 roll; bell — 1; Satyanarayan katha book — 1 copy',
+      'Navadhanya (nine grains) — small bowl; durva grass — a few blades; chandan (sandal paste) — small quantity'
+    ],
+    steps: [
+      'Bathe and clean the puja space. Set the chowki facing east or north; spread the red or yellow cloth.',
+      'Place the kalash: fill with water, add a coin and akshat, arrange mango leaves at the mouth, set a coconut wrapped in red cloth on top.',
+      'Install the Satyanarayan murti/photo on a mound of akshat. Apply tilak of haldi-kumkum-chandan.',
+      'Sankalp: state your name, gotra (or simply your family), place, and the purpose of the puja, holding water, rice and a flower in your palm; then pour the water at the feet.',
+      'Shodashopachar puja in simple form: invoke (avahan), offer seat, water, panchamrit bath (then clean water), cloth, moli, chandan, akshat, flowers with tulsi, dhoop-deep, naivedya of fruits and panjiri, then dakshina.',
+      'Read or listen to all five chapters of the Satyanarayan katha; ring the bell gently at each chapter close.',
+      'Perform aarti with Jai Lakshmi Ramana; wave the thali clockwise before the Lord.',
+      'Distribute panjiri prasad to everyone present — eating the prasad is itself part of the vow.',
+      'Conclude with shanti path and a prayer for forgiveness of mistakes (kshama prarthana).'
+    ]
+  },
+  {
+    id: 'griha-pravesh',
+    title: 'Griha Pravesh (Housewarming)',
+    dev: 'गृह प्रवेश',
+    deity: 'Ganesh',
+    when: 'On an auspicious muhurat chosen by the family pandit. Never enter a new home during an inauspicious tithi; morning muhurats are preferred.',
+    about: 'The first ceremonial entry into a new home. Vastu shanti and Ganesh puja remove obstacles and invite prosperity; the sequence below is the common North Indian household form.',
+    samagri: [
+      'Ganesh murti (small) — 1; Lakshmi-Ganesh photo for the threshold — 1',
+      'Kalash — 2 (one for the door, one for puja); coconuts — 2; mango leaves — 10; red cloth — 1.25 m',
+      'Haldi, kumkum, chandan, akshat — small packs each; moli — 1 roll; janeyu/sacred thread for the kalash',
+      'Navadhanya (nine grains) — 1 small bowl; whole rice — 250 g',
+      'Flowers — 2 dozen; garlands — 2; tulsi sprig — 1; durva grass — small bunch',
+      'Panchamrit items: milk 250 ml, curd, ghee, honey, sugar',
+      'For havan (if performed): havan samagri pack — 1; mango wood sticks; ghee — 250 g; havan kund — 1',
+      'Diya — 5; camphor; agarbatti; dhoop; aarti thali; bell',
+      'Sweets for prasad — 1 kg; fruits — 2 kg; supari — 11; paan — 11',
+      'A new broom and a pot of milk (for the traditional threshold customs); rice pot for the lady of the house to carry in'
+    ],
+    steps: [
+      'Clean and decorate the home; draw a toran of mango leaves and marigold at the main door; make rangoli at the threshold.',
+      'At the muhurat, place the Ganesh murti at the puja spot (north-east corner preferred) and begin Ganesh puja with avahan and shodashopachar offerings.',
+      'Perform Vastu shanti: invoke Vastu Purusha and the nine planets (navagraha), offering flowers and akshat toward each direction.',
+      'Threshold ritual: the lady of the house carries a pot of water (or milk, or rice) on her head and steps in right foot first, followed by the family carrying the kalash and Ganesh murti.',
+      'Boil milk in a new vessel in the kitchen until it overflows — the sign of overflowing abundance; share it as first prasad.',
+      'If performing havan, offer ahutis of ghee and samagri with the Ganesh and Vastu mantras; otherwise a simple diya-camphor aarti through every room suffices.',
+      'Do aarti in every room, leaving a diya burning in the main room for the day.',
+      'Sprinkle Gangajal (or plain sanctified water) in all corners; feed family and guests; keep the home inhabited and lit the first night.'
+    ]
+  },
+  {
+    id: 'sundarakhand-path',
+    title: 'Sundarakhand Path',
+    dev: 'सुंदरकांड पाठ',
+    deity: 'Hanuman',
+    when: 'Tuesdays and Saturdays, Hanuman Jayanti, or during any family crisis. Evening with a full gathering is traditional; a single reader may do it anytime.',
+    about: 'The fifth book of Tulsidas’s Ramcharitmanas — Hanuman’s leap to Lanka and discovery of Sita — read as a remedy for fear and trouble. It is the only kand where Hanuman, not Ram, is the hero.',
+    samagri: [
+      'Ramcharitmanas (Gita Press or any clean print) — 1 copy per reader',
+      'Hanuman murti or photo — 1; Ram darbar photo if available — 1',
+      'Red cloth for the book stand — 1; wooden bajot (book rest) — 1',
+      'Haldi, kumkum, sindoor, chandan, akshat — small packs; red flowers — 1 dozen (Hanuman loves red)',
+      'Sindoor + jasmine oil (chameli tel) for Hanuman’s tilak — small quantity',
+      'Diya of mustard oil or ghee — 2; agarbatti; dhoop; camphor; bell',
+      'Boondi or laddu for bhog — 500 g; fruits — 1 kg; tulsi sprig — 1',
+      'Moli — 1 roll; supari — 5; paan — 5; water vessel + spoon (achamani) — 1'
+    ],
+    steps: [
+      'Bathe, wear clean clothes, and seat the path spot facing east. Place the Manas on the red cloth upon the bajot.',
+      'Light the diya; offer sindoor-chameli oil tilak to Hanuman and red flowers at His feet.',
+      'Sankalp: take water and rice in the palm and state the purpose of the path; pour the water at Hanuman’s feet.',
+      'Begin with Ganesh vandana and the Manas mangalacharan, then read the Sundarakhand steadily — aloud, clearly, without interruption. If several read, hand over at doha boundaries.',
+      'At “Jai Jai Hanuman” points and at Lanka dahan, ring the bell gently.',
+      'After the final chaupai, read the closing dohas and perform aarti (Aarti Kije Hanuman Lala Ki).',
+      'Offer boondi/laddu bhog and fruits; distribute prasad to all.',
+      'Close with kshama prarthana and a moment of silence remembering Hanuman’s fearlessness.'
+    ]
+  },
+  {
+    id: 'lakshmi-puja-diwali',
+    title: 'Lakshmi Puja (Diwali)',
+    dev: 'लक्ष्मी पूजा',
+    deity: 'Lakshmi',
+    when: 'Diwali evening, in the pradosh kaal (the hour after sunset) on the new-moon night of Kartik — the year’s most important Lakshmi muhurat.',
+    about: 'The worship of Goddess Lakshmi with Ganesh at the year’s darkest night, inviting light and prosperity home. Books of account, jewellery and tools of trade are traditionally placed in the puja.',
+    samagri: [
+      'Lakshmi-Ganesh murtis or framed photo — 1 set; Saraswati photo (optional) — 1',
+      'Chowki + red cloth — 1; kalash — 1; coconut — 1; mango leaves — 5-7',
+      'Haldi, kumkum, chandan, akshat (use unbroken rice), moli — small packs',
+      'Lotus/marigold/rose flowers — 3 dozen; garlands — 2; tulsi for Vishnu side',
+      'Panchamrit: milk, curd, ghee, honey, sugar; Ganga jal if available',
+      'Diyas — at least 11 for the puja plus diyas for the whole house; ghee/oil — 250 g; cotton wicks',
+      'Kheel (puffed rice), batasha (sugar drops), sweets — 500 g each; dry fruits — 250 g; fruits — 1 kg',
+      'Supari — 11; paan — 11; cloves, cardamom, coriander seeds, lotus seeds (makhana) — small bowls',
+      'Silver/gold coins or any coins — 5-11; new account book if used in business',
+      'Agarbatti, dhoop, camphor, aarti thali, bell; ittar or rose water — small bottle',
+      'Navadhanya — small bowl; whole turmeric pieces — 5'
+    ],
+    steps: [
+      'Clean the house by day; draw rangoli and light the first diya at the main door at dusk.',
+      'Set the chowki facing east; Ganesh on Lakshmi’s right (or left as per family tradition), kalash before them, account books and coins in the puja area.',
+      'Sankalp for family prosperity; then Ganesh puja first — no puja begins without Him.',
+      'Lakshmi shodashopachar: panchamrit abhishek of the murti, clean water, then cloth, moli, chandan-tilak, akshat, flowers.',
+      'Offer kheel, batasha, makhana, sweets and dry fruits as naivedya with a tulsi leaf touching each offering.',
+      'Invite wealth into the ledger: place coins before the Goddess and mark the new account book with a swastik in kumkum.',
+      'Sing Om Jai Lakshmi Mata aarti with camphor flame; ring the bell; light diyas in every room, the courtyard and the doorway — no corner left dark.',
+      'Distribute prasad; keep one diya burning through the night if the family custom allows (safely).'
+    ]
+  },
+  {
+    id: 'ganesh-sthapana',
+    title: 'Ganesh Sthapana (Chaturthi)',
+    dev: 'गणेश स्थापना',
+    deity: 'Ganesh',
+    when: 'Ganesh Chaturthi morning, in the madhyahna muhurat (midday) announced each year; visarjan follows after 1.5, 3, 5, 7 or 10 days per family tradition.',
+    about: 'Bringing Bappa home: the clay murti is welcomed, invoked with pran-pratishtha, worshipped daily with modak and durva, and farewelled with visarjan.',
+    samagri: [
+      'Eco-friendly clay Ganesh murti — 1 (shadu clay, not plaster-of-paris)',
+      'Chowki or makhar + red/green cloth — 1; toran of mango leaves for the door',
+      'Haldi, kumkum, chandan, sindoor, akshat — small packs; moli — 1 roll',
+      'Durva grass (21 blades) — essential; red flowers (hibiscus best) — 21; marigold — 1 dozen',
+      'Modak — 21 (or 11); laddu as substitute; shira/sweet for daily naivedya',
+      'Kalash, coconut — 1 each; betel nut — 5; paan — 5; cloves-cardamom',
+      'Panchamrit items; pancha-khadya (five sweets) if custom follows',
+      'Diya — 2 (keep one akhand if possible); agarbatti, dhoop, camphor; aarti thali; bell',
+      'Whole coconut with husk for visarjan day; curd-rice or poha for the farewell meal',
+      'Shami or peepal leaves — few (for visarjan); ittar — small bottle'
+    ],
+    steps: [
+      'Bring the murti home with the family saying “Ganpati Bappa Morya”; keep the face covered until sthapana.',
+      'At the muhurat, seat Bappa on the chowki facing east or west; unveil the face with aarti.',
+      'Avahan and pran-pratishtha: invoke life into the murti with folded hands and the family’s full attention; from this moment He is a living guest.',
+      'Shodashopachar: panchamrit abhishek, cloth, janeyu (small thread on the murti), chandan-haldi-kumkum tilak, sindoor to the trunk, akshat.',
+      'Offer 21 durva blades and 21 red flowers one by one with the name-mantra “Om Gam Ganapataye Namah”.',
+      'Offer 21 modaks as naivedya; sing Jai Ganesh Deva or Sukhakarta Dukhharta aarti with camphor.',
+      'Daily until visarjan: morning-evening aarti, fresh flowers, a sweet offering, and never leave the house unlit at the puja spot.',
+      'Visarjan day: final aarti, offer curd-rice, lift the murti with “Pudhchya varshi lavkar ya” (come early next year), immerse in clean water, and bring home a little of the water as blessing.'
+    ]
+  }
+];
