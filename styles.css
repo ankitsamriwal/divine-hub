@@ -666,3 +666,28 @@ body {
   .header-right { width: 100%; flex-direction: column; align-items: stretch; }
   .view-tabs { justify-content: center; }
 }
+
+/* ---------- chat settings + llm ---------- */
+.chat-header-actions { display: flex; gap: 0.5rem; align-items: center; }
+.chat-settings { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--gold-dim); background: var(--ink-3); }
+.chat-settings[hidden] { display: none; }
+.chat-settings-fields { display: flex; gap: 0.4rem; }
+.chat-settings-fields input {
+  flex: 1; background: var(--ink); border: 1px solid var(--gold-dim); border-radius: 8px;
+  padding: 0.45rem 0.6rem; color: var(--cream); font-family: var(--font-ui); font-size: 0.8rem; outline: none;
+}
+.chat-settings-fields input:focus { border-color: var(--gold); }
+.chat-settings-fields button {
+  background: var(--gold); border: none; color: var(--ink); border-radius: 8px;
+  padding: 0.45rem 0.7rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: var(--font-ui);
+}
+.chat-settings-fields button#geminiKeyClear { background: transparent; border: 1px solid var(--gold-dim); color: var(--cream-dim); }
+.chat-settings-note { display: block; font-size: 0.7rem; color: var(--cream-dim); line-height: 1.5; margin-top: 0.5rem; }
+.msg.typing { display: flex; gap: 4px; padding: 0.8rem 1rem; }
+.msg.typing span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+  animation: typingBounce 1s infinite ease-in-out;
+}
+.msg.typing span:nth-child(2) { animation-delay: 0.15s; }
+.msg.typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }

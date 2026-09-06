@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -128,9 +128,20 @@
   <div class="chat-header">
     <div>
       <strong>Divine Guide</strong>
-      <span class="chat-sub">ask about prayers, meanings, deities</span>
+      <span class="chat-sub" id="chatMode">on-device guide</span>
     </div>
-    <button id="chatClose" class="chat-close" aria-label="Close chat">✕</button>
+    <div class="chat-header-actions">
+      <button id="chatSettings" class="chat-close" aria-label="Guide settings">⚙</button>
+      <button id="chatClose" class="chat-close" aria-label="Close chat">✕</button>
+    </div>
+  </div>
+  <div id="chatSettingsRow" class="chat-settings" hidden>
+    <div class="chat-settings-fields">
+      <input id="geminiKeyInput" type="password" placeholder="Gemini API key" autocomplete="off">
+      <button id="geminiKeySave">Save</button>
+      <button id="geminiKeyClear">Clear</button>
+    </div>
+    <span class="chat-settings-note">With a Gemini key (free, aistudio.google.com) the Guide answers conversationally. Without one it uses its built-in knowledge. The key is stored only in this browser. Restrict the key to this site by HTTP referrer for safety.</span>
   </div>
   <div id="chatMessages" class="chat-messages"></div>
   <div id="chatChips" class="chat-chips"></div>
@@ -145,8 +156,8 @@
   <p class="footer-om">॥ शान्तिः शान्तिः शान्तिः ॥</p>
 </footer>
 
-<script src="data.js?v=3"></script>
-<script src="app.js?v=3"></script>
-<script src="japa.js?v=3"></script>
+<script src="data.js?v=4"></script>
+<script src="app.js?v=4"></script>
+<script src="japa.js?v=4"></script>
 </body>
 </html>

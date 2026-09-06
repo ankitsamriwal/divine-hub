@@ -249,6 +249,123 @@
   });
   chatClose.addEventListener('click', () => { panel.hidden = true; });
 
+  /* ---------- Gemini key settings ---------- */
+  const KEY_LS = 'divinehub_gemini_key';
+  const settingsBtn = document.getElementById('chatSettings');
+  const settingsRow = document.getElementById('chatSettingsRow');
+  const keyInput = document.getElementById('geminiKeyInput');
+  const chatMode = document.getElementById('chatMode');
+
+  function refreshModeLabel() {
+    chatMode.textContent = localStorage.getItem(KEY_LS)
+      ? 'gemini-powered · ask anything'
+      : 'on-device guide · ask about prayers, meanings, deities';
+  }
+  refreshModeLabel();
+
+  settingsBtn.addEventListener('click', () => {
+    settingsRow.hidden = !settingsRow.hidden;
+    if (!settingsRow.hidden) keyInput.value = localStorage.getItem(KEY_LS) || '';
+  });
+  document.getElementById('geminiKeySave').addEventListener('click', () => {
+    const k = keyInput.value.trim();
+    if (k) localStorage.setItem(KEY_LS, k);
+    refreshModeLabel();
+    settingsRow.hidden = true;
+    if (k) botSay('Key saved - I will answer with Gemini now. Ask me anything about the prayers, their meanings, or the deities.');
+  });
+  document.getElementById('geminiKeyClear').addEventListener('click', () => {
+    localStorage.removeItem(KEY_LS);
+    keyInput.value = '';
+    refreshModeLabel();
+    settingsRow.hidden = true;
+    botSay('Key removed - I am back to my built-in on-device knowledge.');
+  });
+
+  /* ---------- Gemini call (single call-site; swap in a proxy here later if needed) ---------- */
+  const LLM_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+  const LLM_URL = (model, key) =>
+    'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key);
+
+  function corpusContext() {
+    const parts = PRAYERS.map(p => {
+      const meanings = p.stanzas.map((s, i) => (i + 1) + '. ' + s.meaning).join('\n');
+      return '### ' + p.title + ' (' + p.titleDev + ') — ' + p.type + ' of ' + p.deity +
+        '\nAbout: ' + p.about + '\nMeanings:\n' + meanings;
+    });
+    const deityNotes = Object.entries(DEITIES).map(([n, d]) => '- ' + n + ': ' + d.blurb).join('\n');
+    return parts.join('\n\n') + '\n\nDEITY NOTES:\n' + deityNotes;
+  }
+
+  const SYSTEM_PROMPT = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
+    'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
+    'If asked about a prayer, deity or text not in the corpus, say gently that it is not in this collection yet and offer what is here. ' +
+    'Never invent scripture verses or attribute made-up quotes to sacred texts. ' +
+    'Keep answers short - 2 to 5 sentences unless the person asks for detail. Use the prayer titles so they can find them in the app.\n\nCORPUS:\n' +
+    corpusContext();
+
+  const history = []; // {role:'user'|'model', text}
+
+  async function askLLM(question, key) {
+    const contents = history.slice(-8).map(h => ({ role: h.role, parts: [{ text: h.text }] }));
+    contents.push({ role: 'user', parts: [{ text: question }] });
+    const body = {
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: contents,
+      generationConfig: { temperature: 0.5, maxOutputTokens: 600 }
+    };
+    let lastErr = null;
+    for (const model of LLM_MODELS) {
+      try {
+        const res = await fetch(LLM_URL(model, key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+        const data = await res.json();
+        const text = data && data.candidates && data.candidates[0] &&
+          data.candidates[0].content && data.candidates[0].content.parts &&
+          data.candidates[0].content.parts.map(p => p.text).join('');
+        if (text && text.trim()) {
+          history.push({ role: 'user', text: question }, { role: 'model', text: text.trim() });
+          return text.trim();
+        }
+        lastErr = new Error('empty response');
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('LLM unavailable');
+  }
+
+  /* typing indicator */
+  let typingEl = null;
+  function showTyping() {
+    typingEl = document.createElement('div');
+    typingEl.className = 'msg bot typing';
+    typingEl.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(typingEl);
+    messages.scrollTop = messages.scrollHeight;
+  }
+  function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
+
+  async function respond(q) {
+    const key = localStorage.getItem(KEY_LS);
+    if (key) {
+      showTyping();
+      try {
+        const a = await askLLM(q, key);
+        hideTyping();
+        botSay(a);
+        return;
+      } catch (e) {
+        hideTyping();
+        botSay('The Gemini call did not go through (check the key or its referrer restriction). Answering from my built-in knowledge instead:\n\n' + botAnswer(q));
+        return;
+      }
+    }
+    botSay(botAnswer(q));
+  }
+
   function renderChips(list) {
     chips.innerHTML = '';
     list.forEach(q => {
@@ -379,7 +496,7 @@
     if (!q) return;
     userSay(q);
     input.value = '';
-    setTimeout(() => botSay(botAnswer(q)), 250);
+    respond(q);
   });
 
   renderGrid();
