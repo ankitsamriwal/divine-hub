@@ -274,7 +274,7 @@
   chatClose.addEventListener('click', () => { panel.hidden = true; });
 
   /* ---------- Gemini key settings ---------- */
-  const WORKER_URL = ''; // set to the deployed Cloudflare worker origin, e.g. https://divine-guide.<subdomain>.workers.dev
+  const WORKER_URL = 'https://divine-guide.ankitsamriwal.workers.dev'; // set to the deployed Cloudflare worker origin, e.g. https://divine-guide.<subdomain>.workers.dev
   const KEY_LS = 'divinehub_gemini_key';
   const settingsBtn = document.getElementById('chatSettings');
   const settingsRow = document.getElementById('chatSettingsRow');
@@ -316,7 +316,7 @@
     const res = await fetch(WORKER_URL + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents: contents })
+      body: JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT_WORKER }] }, contents: contents })
     });
     if (!res.ok) throw new Error('worker HTTP ' + res.status);
     const data = await res.json();
@@ -338,6 +338,13 @@
     return parts.join('\n\n') + '\n\nDEITY NOTES:\n' + deityNotes;
   }
 
+  function corpusContextCoreCompact() {
+    const parts = PRAYERS.map(p =>
+      '### ' + p.title + ' (' + p.titleDev + ') — ' + p.type + ' of ' + p.deity + '. ' + p.about);
+    const deityNotes = Object.entries(DEITIES).map(([n, d]) => '- ' + n + ': ' + d.blurb).join('\n');
+    return parts.join('\n') + '\n\nDEITY NOTES:\n' + deityNotes;
+  }
+
   const FESTIVALS_TEXT = '\n\nFESTIVAL CALENDAR (verified 2026-2027):\n' + FESTIVALS.map(f =>
     '- ' + f.name + ' (' + f.dev + '): 2026 on ' + f.d2026 + ', 2027 on ' + f.d2027 + '. ' + f.note).join('\n');
   const WHY_TEXT = '\n\nPUJA ITEMS - WHY THEY ARE USED:\n' + WHY_CATEGORIES.map(c =>
@@ -350,12 +357,13 @@
     '- ' + e.event + ': ' + e.puja + ' (' + e.deity + '). ' + e.why + (e.note ? ' Note: ' + e.note : '')).join('\n');
   const NEARBY_TEXT = '\n\nNEARBY: The app has a Nearby tab with map searches for temples, pandits for home puja, and flower/prasad shops, plus online pandit booking links (SmartPuja, PujariJi and similar). For "find a pandit" questions, point people there.';
 
-  const SYSTEM_PROMPT = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
+  const SYSTEM_PROMPT_BASE = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
     'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
     'If asked about a prayer, deity or text not in the corpus, say gently that it is not in this collection yet and offer what is here. ' +
     'Never invent scripture verses or attribute made-up quotes to sacred texts. ' +
-    'Keep answers short - 2 to 5 sentences unless the person asks for detail. Use the prayer titles so they can find them in the app.\n\nCORPUS:\n' +
-    corpusContext();
+    'Keep answers short - 2 to 5 sentences unless the person asks for detail. Use the prayer titles so they can find them in the app.\n\nCORPUS:\n';
+  const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + corpusContext();
+  const SYSTEM_PROMPT_WORKER = SYSTEM_PROMPT_BASE + corpusContextCompact();
 
   const history = []; // {role:'user'|'model', text}
 
@@ -556,6 +564,7 @@
   /* ---------- expansion wrappers: festivals, why, guides ---------- */
 
   function corpusContext() { return corpusContextCore() + FESTIVALS_TEXT + TITHIS_TEXT + WHY_TEXT + GUIDES_TEXT + LIFE_EVENTS_TEXT + NEARBY_TEXT; }
+  function corpusContextCompact() { return corpusContextCoreCompact() + FESTIVALS_TEXT + TITHIS_TEXT + WHY_TEXT + GUIDES_TEXT + LIFE_EVENTS_TEXT + NEARBY_TEXT; }
 
   function botAnswer(q) {
     const qRaw = q.toLowerCase().trim();

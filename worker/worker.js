@@ -58,7 +58,7 @@ export default {
     if (!body || typeof body !== 'object') return new Response(JSON.stringify({ error: 'bad_body' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } });
 
     // Constrain what the public can send: capped history, fixed generation config.
-    const sys = (body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0] && String(body.system_instruction.parts[0].text || '')).slice(0, 20000);
+    const sys = (body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0] && String(body.system_instruction.parts[0].text || '')).slice(0, 45000);
     const contents = Array.isArray(body.contents) ? body.contents.slice(-10).map(c => ({
       role: c.role === 'model' ? 'model' : 'user',
       parts: [{ text: String((c.parts && c.parts[0] && c.parts[0].text) || '').slice(0, 4000) }]
