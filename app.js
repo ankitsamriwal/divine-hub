@@ -274,6 +274,7 @@
   chatClose.addEventListener('click', () => { panel.hidden = true; });
 
   /* ---------- Gemini key settings ---------- */
+  const WORKER_URL = ''; // set to the deployed Cloudflare worker origin, e.g. https://divine-guide.<subdomain>.workers.dev
   const KEY_LS = 'divinehub_gemini_key';
   const settingsBtn = document.getElementById('chatSettings');
   const settingsRow = document.getElementById('chatSettingsRow');
@@ -281,9 +282,11 @@
   const chatMode = document.getElementById('chatMode');
 
   function refreshModeLabel() {
-    chatMode.textContent = localStorage.getItem(KEY_LS)
-      ? 'gemini-powered · ask anything'
-      : 'on-device guide · ask about prayers, meanings, deities';
+    chatMode.textContent = WORKER_URL
+      ? 'online guide · ask anything'
+      : (localStorage.getItem(KEY_LS)
+        ? 'gemini-powered · ask anything'
+        : 'on-device guide · ask about prayers, meanings, deities');
   }
   refreshModeLabel();
 
@@ -306,7 +309,21 @@
     botSay('Key removed - I am back to my built-in on-device knowledge.');
   });
 
-  /* ---------- Gemini call (single call-site; swap in a proxy here later if needed) ---------- */
+  /* ---------- Guide backends: Cloudflare worker proxy (world-visible, no key) → personal Gemini key → on-device ---------- */
+  async function askWorker(question) {
+    const contents = history.slice(-8).map(h => ({ role: h.role, parts: [{ text: h.text }] }));
+    contents.push({ role: 'user', parts: [{ text: question }] });
+    const res = await fetch(WORKER_URL + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents: contents })
+    });
+    if (!res.ok) throw new Error('worker HTTP ' + res.status);
+    const data = await res.json();
+    if (!data || !data.text) throw new Error('worker empty');
+    history.push({ role: 'user', text: question }, { role: 'model', text: data.text.trim() });
+    return data.text.trim();
+  }
   const LLM_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
   const LLM_URL = (model, key) =>
     'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key);
@@ -374,18 +391,27 @@
 
   async function respond(q) {
     const key = localStorage.getItem(KEY_LS);
-    if (key) {
+    if (WORKER_URL || key) {
       showTyping();
-      try {
-        const a = await askLLM(q, key);
-        hideTyping();
-        botSay(a);
-        return;
-      } catch (e) {
-        hideTyping();
-        botSay('The Gemini call did not go through (check the key or its referrer restriction). Answering from my built-in knowledge instead:\n\n' + botAnswer(q));
-        return;
+      if (WORKER_URL) {
+        try {
+          const a = await askWorker(q);
+          hideTyping();
+          botSay(a);
+          return;
+        } catch (e) { /* fall through to personal key / on-device */ }
       }
+      if (key) {
+        try {
+          const a = await askLLM(q, key);
+          hideTyping();
+          botSay(a);
+          return;
+        } catch (e) { /* fall through to on-device */ }
+      }
+      hideTyping();
+      botSay('The online guide is unreachable right now. Answering from my built-in knowledge instead:\n\n' + botAnswer(q));
+      return;
     }
     botSay(botAnswer(q));
   }
