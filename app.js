@@ -344,6 +344,11 @@
     c.title + ': ' + c.items.map(i => i.item + ' - ' + i.role + ' ' + i.traditional).join(' | ')).join('\n');
   const GUIDES_TEXT = '\n\nPUJA GUIDES (samagri + steps available in the app):\n' + PUJA_GUIDES.map(g =>
     '- ' + g.title + ' (' + g.dev + '): ' + g.about + ' When: ' + g.when).join('\n');
+  const TITHIS_TEXT = '\n\nAMAVASYA AND POORNIMA (new/full moon) DATES 2026-2027:\n' + TITHIS.map(t =>
+    '- ' + t.name + ': ' + t.date).join('\n');
+  const LIFE_EVENTS_TEXT = '\n\nWHICH PUJA FOR A LIFE EVENT (traditional recommendations):\n' + LIFE_EVENTS.map(e =>
+    '- ' + e.event + ': ' + e.puja + ' (' + e.deity + '). ' + e.why + (e.note ? ' Note: ' + e.note : '')).join('\n');
+  const NEARBY_TEXT = '\n\nNEARBY: The app has a Nearby tab with map searches for temples, pandits for home puja, and flower/prasad shops, plus online pandit booking links (SmartPuja, PujariJi and similar). For "find a pandit" questions, point people there.';
 
   const SYSTEM_PROMPT = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
     'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
@@ -550,7 +555,7 @@
 
   /* ---------- expansion wrappers: festivals, why, guides ---------- */
 
-  function corpusContext() { return corpusContextCore() + FESTIVALS_TEXT + WHY_TEXT + GUIDES_TEXT; }
+  function corpusContext() { return corpusContextCore() + FESTIVALS_TEXT + TITHIS_TEXT + WHY_TEXT + GUIDES_TEXT + LIFE_EVENTS_TEXT + NEARBY_TEXT; }
 
   function botAnswer(q) {
     const qRaw = q.toLowerCase().trim();
@@ -581,6 +586,34 @@
     if (/(how to|how do|vidhi|samagri|checklist|griha pravesh|griha|housewarming|satyanarayan|sunderkand|sundarakhand|sthapana|diwali puja|lakshmi puja|ganesh puja|path|paath)/.test(qRaw)) {
       const g = PUJA_GUIDES.find(x => qRaw.includes(x.title.split(' ')[0].toLowerCase())) || PUJA_GUIDES[0];
       return g.title + ' (' + g.dev + ') — ' + g.about + '\n\nWhen: ' + g.when + '\n\nThe full guide — ' + g.samagri.length + ' samagri items with quantities and ' + g.steps.length + ' steps — is in the Puja Guides tab.';
+    }
+
+    // Amavasya / Poornima tithi questions
+    if (/(amavasya|amavas|new moon)/.test(qRaw)) {
+      const n = tithiNext('Amavasya', new Date());
+      return (n ? 'The next Amavasya is ' + n.name + ' on ' + fmtFestivalDate(new Date(n.date + 'T00:00:00')) + '.' : '') +
+        '\n\nAmavasya is the new-moon day - the traditional time for Pitru Tarpan and shradh for ancestors, and for quiet japa and fasting. Sarva Pitru Amavasya (Mahalaya) is the most observed of the year.' +
+        '\n\nThe Festivals tab lists every Amavasya and Poornima of 2026-2027.';
+    }
+    if (/(poornima|purnima|pooranmashi|pournami|full moon)/.test(qRaw)) {
+      const n = tithiNext('Poornima', new Date());
+      return (n ? 'The next Poornima is ' + n.name + ' on ' + fmtFestivalDate(new Date(n.date + 'T00:00:00')) + '.' : '') +
+        '\n\nPoornima is the full-moon day - Satyanarayan puja is traditionally performed on it, and several great festivals (Guru Purnima, Sharad Purnima, Kartik Purnima) fall on full moons.' +
+        '\n\nThe Festivals tab has the full 2026-2027 tithi calendar.';
+    }
+
+    // Life-event puja recommendations
+    const evHits = lifeEventFind(qRaw);
+    if (evHits.length) {
+      const e = evHits[0];
+      return 'For ' + e.event.toLowerCase() + ': ' + e.puja + ' - ' + e.deity + ' is invoked.\n\n' + e.why +
+        (e.note ? '\n\n' + e.note : '') +
+        '\n\nFor the samagri and steps, see the Puja Guides tab; for a priest, see the Nearby tab.';
+    }
+
+    // Pandit / priest nearby
+    if (/(pandit|panditji|pandit ji|purohit|pujari|priest|near me|nearby)/.test(qRaw)) {
+      return 'The Nearby tab has one-tap map searches for pandits for home puja, temples, and flower/prasad shops around you, plus online pandit-booking services (SmartPuja, PujariJi, and others) if you want a fixed-price package with samagri included.';
     }
 
     return botAnswerCore(q);

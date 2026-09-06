@@ -43,3 +43,72 @@ function festivalsUpcoming(fromDate) {
 function fmtFestivalDate(dt) {
   return dt.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+// Amavasya (new moon) and Poornima (full moon) 2026-2027, New Delhi convention.
+// Cross-checked against Drik Panchang and Prokerala panchang tables. Tithis that
+// span midnight can shift observance by a day between regions and almanacs.
+const TITHIS = [
+  // 2026 Amavasya
+  { type: 'Amavasya', date: '2026-01-18', name: 'Mauni Amavasya' },
+  { type: 'Amavasya', date: '2026-02-17', name: 'Phalguna Amavasya' },
+  { type: 'Amavasya', date: '2026-03-18', name: 'Phalguna Amavasya (Darsha)' },
+  { type: 'Amavasya', date: '2026-04-17', name: 'Chaitra Amavasya' },
+  { type: 'Amavasya', date: '2026-05-16', name: 'Vaishakha (Shani) Amavasya' },
+  { type: 'Amavasya', date: '2026-06-14', name: 'Jyeshtha Amavasya' },
+  { type: 'Amavasya', date: '2026-07-14', name: 'Ashadha Amavasya' },
+  { type: 'Amavasya', date: '2026-08-12', name: 'Hariyali Amavasya' },
+  { type: 'Amavasya', date: '2026-09-10', name: 'Bhadrapada Amavasya' },
+  { type: 'Amavasya', date: '2026-10-10', name: 'Mahalaya Amavasya' },
+  { type: 'Amavasya', date: '2026-11-08', name: 'Kartik Amavasya (Diwali night)' },
+  { type: 'Amavasya', date: '2026-12-08', name: 'Margashirsha Amavasya' },
+  // 2026 Poornima
+  { type: 'Poornima', date: '2026-01-03', name: 'Paush Poornima' },
+  { type: 'Poornima', date: '2026-02-01', name: 'Magha Poornima' },
+  { type: 'Poornima', date: '2026-03-03', name: 'Phalguna Poornima (Holika Dahan)' },
+  { type: 'Poornima', date: '2026-04-02', name: 'Chaitra Poornima (Hanuman Jayanti)' },
+  { type: 'Poornima', date: '2026-05-01', name: 'Vaishakha (Buddha) Poornima' },
+  { type: 'Poornima', date: '2026-05-31', name: 'Jyeshtha Poornima' },
+  { type: 'Poornima', date: '2026-06-29', name: 'Ashadha Poornima' },
+  { type: 'Poornima', date: '2026-07-29', name: 'Guru Poornima' },
+  { type: 'Poornima', date: '2026-08-28', name: 'Shravana Poornima (Raksha Bandhan)' },
+  { type: 'Poornima', date: '2026-09-26', name: 'Bhadrapada Poornima' },
+  { type: 'Poornima', date: '2026-10-26', name: 'Sharad (Kojagiri) Poornima' },
+  { type: 'Poornima', date: '2026-11-24', name: 'Kartik Poornima' },
+  { type: 'Poornima', date: '2026-12-24', name: 'Margashirsha Poornima' },
+  // 2027 Amavasya
+  { type: 'Amavasya', date: '2027-01-07', name: 'Paush Amavasya' },
+  { type: 'Amavasya', date: '2027-02-06', name: 'Magha Amavasya' },
+  { type: 'Amavasya', date: '2027-03-08', name: 'Phalguna (Maha Shivratri month) Amavasya' },
+  { type: 'Amavasya', date: '2027-04-06', name: 'Chaitra Amavasya' },
+  { type: 'Amavasya', date: '2027-05-06', name: 'Vaishakha Amavasya' },
+  { type: 'Amavasya', date: '2027-06-04', name: 'Jyeshtha Amavasya' },
+  { type: 'Amavasya', date: '2027-07-04', name: 'Ashadha Amavasya' },
+  { type: 'Amavasya', date: '2027-08-02', name: 'Shravana Amavasya' },
+  { type: 'Amavasya', date: '2027-08-31', name: 'Bhadrapada Amavasya' },
+  { type: 'Amavasya', date: '2027-09-30', name: 'Ashwin (Sarva Pitru) Amavasya' },
+  { type: 'Amavasya', date: '2027-10-29', name: 'Kartik Amavasya' },
+  { type: 'Amavasya', date: '2027-11-28', name: 'Margashirsha Amavasya' },
+  { type: 'Amavasya', date: '2027-12-27', name: 'Paush Amavasya' },
+  // 2027 Poornima
+  { type: 'Poornima', date: '2027-01-22', name: 'Paush Poornima' },
+  { type: 'Poornima', date: '2027-02-20', name: 'Magha Poornima' },
+  { type: 'Poornima', date: '2027-03-22', name: 'Phalguna Poornima (Holika Dahan)' },
+  { type: 'Poornima', date: '2027-04-20', name: 'Chaitra Poornima (Hanuman Jayanti)' },
+  { type: 'Poornima', date: '2027-05-20', name: 'Vaishakha (Buddha) Poornima' },
+  { type: 'Poornima', date: '2027-06-18', name: 'Jyeshtha Poornima' },
+  { type: 'Poornima', date: '2027-07-18', name: 'Guru Poornima' },
+  { type: 'Poornima', date: '2027-08-17', name: 'Shravana Poornima (Raksha Bandhan)' },
+  { type: 'Poornima', date: '2027-09-15', name: 'Bhadrapada Poornima' },
+  { type: 'Poornima', date: '2027-10-15', name: 'Sharad Poornima' },
+  { type: 'Poornima', date: '2027-11-13', name: 'Kartik Poornima' },
+  { type: 'Poornima', date: '2027-12-13', name: 'Margashirsha Poornima' }
+];
+
+// Next Amavasya / Poornima from a given date.
+function tithiNext(type, fromDate) {
+  const y = fromDate.getFullYear();
+  const today = new Date(y, fromDate.getMonth(), fromDate.getDate());
+  const hit = TITHIS.filter(t => t.type === type && new Date(t.date + 'T00:00:00') >= today)
+    .sort((a, b) => a.date < b.date ? -1 : 1)[0];
+  return hit || null;
+}

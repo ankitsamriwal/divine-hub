@@ -13,50 +13,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Ensure workers.dev subdomain exists
+    - name: Deploy worker via wrangler
       run: |
-        code=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
-          "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
-          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-          -H "Content-Type: application/json" \
-          --data "{\"subdomain\":\"$SUBDOMAIN\"}")
-        echo "subdomain registration status: $code (409/exists or 200 both fine)"
-
-    - name: Upload worker script (ESM)
-      run: |
-        curl -sf -X PUT \
-          "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME" \
-          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-          -F "metadata={\"main_module\":\"worker.js\",\"compatibility_date\":\"2026-09-06\",\"workers_dev\":true};type=application/json" \
-          -F "worker.js=@worker/worker.js;type=application/javascript+module" \
-          | python3 -c "import json,sys;d=json.load(sys.stdin);print('upload success:',d.get('success'))"
+        npx -y wrangler@latest deploy worker/worker.js \
+          --name "$WORKER_NAME" \
+          --compatibility-date 2026-09-06
 
     - name: Set Gemini key as worker secret
       run: |
-        python3 - <<'PY'
-        import json, os, urllib.request
-        body = json.dumps({"name": "GEMINI_API_KEY", "text": os.environ["GEMINI_API_KEY"], "type": "secret_text"}).encode()
-        req = urllib.request.Request(
-          f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CLOUDFLARE_ACCOUNT_ID']}/workers/scripts/divine-guide/secrets",
-          data=body, method="PUT",
-          headers={"Authorization": "Bearer " + os.environ["CLOUDFLARE_API_TOKEN"], "Content-Type": "application/json"})
-        d = json.load(urllib.request.urlopen(req))
-        print("secret set:", d.get("success"))
-        PY
+        printf '%s' "$GEMINI_API_KEY" | npx -y wrangler@latest secret put GEMINI_API_KEY --name "$WORKER_NAME"
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-    - name: Enable workers.dev route
-      run: |
-        resp=$(curl -s -X PUT \
-          "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME/subdomain" \
-          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-          -H "Content-Type: application/json" \
-          --data '{"enabled":true}')
-        echo "route enable response: $resp"
-
     - name: Smoke test (CORS + endpoint shape)
       run: |
+        sleep 5
         curl -s -o /dev/null -w 'OPTIONS preflight: %{http_code}\n' -X OPTIONS \
           "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/chat" \
-          -H "Origin: https://ankitsamriwal.github.io" -H "Access-Control-Request-Method: POST"
+          -H "Origin: https://ankitsamriwal.github.io" -H "Access-Control-Request-Method: POST" \
+          -H "Access-Control-Request-Headers: content-type"
