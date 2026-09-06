@@ -20,28 +20,66 @@
   const prayerContent = document.getElementById('prayerContent');
   const closePrayerBtn = document.getElementById('closePrayer');
 
-  let activeDeity = 'All';
+  let activeDeities = new Set();
   let searchQuery = '';
 
-  const deityOrder = ['All', 'Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati', 'Radha', 'Surya', 'Sai Baba', 'Sheetla Mata', 'Santoshi Mata', 'Bhairav'];
+  const deityOrder = ['Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati', 'Radha', 'Surya', 'Sai Baba', 'Sheetla Mata', 'Santoshi Mata', 'Bhairav'];
 
-  /* ---------- filter chips ---------- */
+  /* ---------- deity multi-select ---------- */
+  const filterBtn = document.getElementById('deityFilterBtn');
+  const filterMenu = document.getElementById('deityMenu');
+  const filterLabel = document.getElementById('deityFilterLabel');
+
+  function updateFilterLabel() {
+    const n = activeDeities.size;
+    if (!n) { filterLabel.textContent = 'All deities'; return; }
+    const arr = [...activeDeities];
+    filterLabel.textContent = n <= 2 ? arr.join(' + ') : n + ' deities selected';
+  }
+
+  const optionRows = {};
   deityOrder.forEach(d => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (d === 'All' ? ' active' : '');
-    b.textContent = d === 'All' ? 'All' : d;
-    b.setAttribute('aria-pressed', d === 'All');
-    b.addEventListener('click', () => {
-      activeDeity = d;
-      filterNav.querySelectorAll('.chip').forEach(c => {
-        const on = c.textContent === d || (d === 'All' && c.textContent === 'All');
-        c.classList.toggle('active', c === b);
-        c.setAttribute('aria-pressed', c === b);
-      });
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'deity-option';
+    row.setAttribute('role', 'menuitemcheckbox');
+    row.setAttribute('aria-checked', 'false');
+    const count = PRAYERS.filter(p => p.deity === d).length;
+    row.innerHTML = `<span class="df-check" aria-hidden="true"></span><span class="df-name">${d}</span><span class="df-count">${count}</span>`;
+    row.addEventListener('click', () => {
+      if (activeDeities.has(d)) activeDeities.delete(d); else activeDeities.add(d);
+      const on = activeDeities.has(d);
+      row.classList.toggle('selected', on);
+      row.setAttribute('aria-checked', on);
+      clearRow.hidden = activeDeities.size === 0;
+      updateFilterLabel();
       renderGrid();
     });
-    filterNav.appendChild(b);
+    filterMenu.appendChild(row);
+    optionRows[d] = row;
   });
+
+  const clearRow = document.createElement('button');
+  clearRow.type = 'button';
+  clearRow.className = 'deity-clear';
+  clearRow.textContent = 'Clear \u2014 show all';
+  clearRow.hidden = true;
+  clearRow.addEventListener('click', () => {
+    activeDeities.clear();
+    Object.values(optionRows).forEach(r => { r.classList.remove('selected'); r.setAttribute('aria-checked', 'false'); });
+    clearRow.hidden = true;
+    updateFilterLabel();
+    renderGrid();
+  });
+  filterMenu.appendChild(clearRow);
+
+  function setMenuOpen(open) {
+    filterMenu.hidden = !open;
+    filterBtn.setAttribute('aria-expanded', String(open));
+  }
+  filterBtn.addEventListener('click', e => { e.stopPropagation(); setMenuOpen(filterMenu.hidden); });
+  document.addEventListener('click', e => { if (!filterMenu.hidden && !e.target.closest('.deity-filter')) setMenuOpen(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !filterMenu.hidden) { setMenuOpen(false); filterBtn.focus(); } });
 
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
@@ -50,7 +88,7 @@
 
   /* ---------- grid ---------- */
   function prayerMatches(p) {
-    if (activeDeity !== 'All' && p.deity !== activeDeity) return false;
+    if (activeDeities.size && !activeDeities.has(p.deity)) return false;
     if (!searchQuery) return true;
     const hay = [p.title, p.titleDev, p.deity, p.deityDev, p.type, p.about, (p.keywords || []).join(' '),
       p.stanzas.map(s => s.translit.join(' ') + ' ' + s.dev.join(' ')).join(' ')].join(' ').toLowerCase();
