@@ -1,6 +1,16 @@
 /* Divine Hub — app logic: grid, filters, prayer view, TTS, guide chatbot */
 
 (function () {
+  /* opening intro: once per session, tap to skip */
+  (function intro() {
+    const el = document.getElementById('intro');
+    if (!el) return;
+    try { sessionStorage.setItem('dh_intro_seen', '1'); } catch (e) {}
+    const dismiss = () => { el.style.animation = 'none'; el.style.transition = 'opacity .35s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 380); };
+    el.addEventListener('click', dismiss);
+    el.addEventListener('animationend', () => el.remove());
+  })();
+
   'use strict';
 
   const grid = document.getElementById('prayerGrid');
