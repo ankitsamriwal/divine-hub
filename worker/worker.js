@@ -7,7 +7,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://ankitsamriwal.github.io',
   'https://prarthana.vercel.app'
 ]);
-const MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+const MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 const RATE_LIMIT = 20;          // requests
 const RATE_WINDOW_MS = 3600000; // per hour, per IP, per isolate (best effort)
 
@@ -80,8 +80,13 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) {
+          let msg = '';
+          try { const eb = await res.json(); msg = eb && eb.error && eb.error.message ? String(eb.error.message).slice(0, 160) : ''; } catch (e) {}
+          attempts.push(model + ':' + res.status + (msg ? ' ' + msg : ''));
+          lastErr = 'gemini_http_' + res.status; continue;
+        }
         attempts.push(model + ':' + res.status);
-        if (!res.ok) { lastErr = 'gemini_http_' + res.status; continue; }
         const data = await res.json();
         const text = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
           data.candidates[0].content.parts && data.candidates[0].content.parts.map(p => p.text).join('');
