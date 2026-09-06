@@ -3,7 +3,10 @@
 // CORS-locked to the GitHub Pages origin. Best-effort per-IP rate limit
 // (in-memory per isolate; no KV/D1 so the API token needs only Workers Scripts Edit).
 
-const ALLOWED_ORIGIN = 'https://ankitsamriwal.github.io';
+const ALLOWED_ORIGINS = new Set([
+  'https://ankitsamriwal.github.io',
+  'https://prarthana.vercel.app'
+]);
 const MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
 const RATE_LIMIT = 20;          // requests
 const RATE_WINDOW_MS = 3600000; // per hour, per IP, per isolate (best effort)
@@ -20,7 +23,7 @@ function rateOk(ip) {
 }
 
 function corsHeaders(origin) {
-  const ok = origin === ALLOWED_ORIGIN;
+  const ok = ALLOWED_ORIGINS.has(origin);
   return {
     'Access-Control-Allow-Origin': ok ? origin : 'null',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -41,7 +44,7 @@ export default {
     if (url.pathname !== '/chat' || request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'not_found' }), { status: 404, headers: { ...headers, 'Content-Type': 'application/json' } });
     }
-    if (origin !== ALLOWED_ORIGIN) {
+    if (!ALLOWED_ORIGINS.has(origin)) {
       return new Response(JSON.stringify({ error: 'forbidden_origin' }), { status: 403, headers: { ...headers, 'Content-Type': 'application/json' } });
     }
 
