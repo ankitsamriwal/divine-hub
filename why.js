@@ -114,11 +114,18 @@ const WHY_CATEGORIES = [
 ];
 
 function whyFind(query) {
-  const q = query.toLowerCase();
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !['why','what','the','use','used','offer','offered','does','for','and','are','with','puja'].includes(w));
   const hits = [];
   WHY_CATEGORIES.forEach(c => c.items.forEach(it => {
-    const hay = (it.item + ' ' + it.dev + ' ' + it.role + ' ' + it.traditional + ' ' + c.title).toLowerCase();
-    if (q.split(/\s+/).some(w => w.length > 2 && hay.includes(w))) hits.push(it);
+    let score = 0;
+    const name = (it.item + ' ' + it.dev).toLowerCase();
+    const body = (it.role + ' ' + it.traditional + ' ' + it.science + ' ' + c.title).toLowerCase();
+    words.forEach(w => {
+      if (name.includes(w)) score += 10;
+      else if (body.includes(w)) score += 1;
+    });
+    if (score > 0) hits.push({ it, score });
   }));
-  return hits;
+  hits.sort((a, b) => b.score - a.score);
+  return hits.map(h => h.it);
 }
