@@ -383,7 +383,7 @@
     const body = {
       system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: contents,
-      generationConfig: { temperature: 0.5, maxOutputTokens: 600 }
+      generationConfig: { temperature: 0.5, maxOutputTokens: 2500 }
     };
     let lastErr = null;
     for (const model of LLM_MODELS) {

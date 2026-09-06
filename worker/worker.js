@@ -69,7 +69,7 @@ export default {
     const payload = {
       system_instruction: { parts: [{ text: sys }] },
       contents: contents,
-      generationConfig: { temperature: 0.5, maxOutputTokens: 600 }
+      generationConfig: { temperature: 0.5, maxOutputTokens: 2500 }
     };
 
     let lastErr = 'llm_unavailable';
