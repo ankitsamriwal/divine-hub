@@ -496,10 +496,19 @@
     });
   }
 
+  function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function mdLite(t) {
+    return esc(t)
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+      .replace(/^###\s*(.+)$/gm, '<strong>$1</strong>')
+      .replace(/^---$/gm, '')
+      .replace(/\n/g, '<br>');
+  }
   function botSay(text) {
     const d = document.createElement('div');
     d.className = 'msg bot';
-    d.textContent = text;
+    d.innerHTML = mdLite(text);
     messages.appendChild(d);
     messages.scrollTop = messages.scrollHeight;
   }
