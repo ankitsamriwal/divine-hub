@@ -371,7 +371,8 @@
     'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
     'If asked about a prayer, deity or text not in the corpus, say gently that it is not in this collection yet and offer what is here. ' +
     'Never invent scripture verses or attribute made-up quotes to sacred texts. ' +
-    'Keep answers short - 2 to 5 sentences unless the person asks for detail. Use the prayer titles so they can find them in the app.\n\nCORPUS:\n';
+    'Keep answers short - 2 to 5 sentences unless the person asks for detail. Use the prayer titles so they can find them in the app.\n' +
+    'TODAY IS ' + new Date().toDateString() + '. For "next" or "upcoming" Amavasya, Poornima or festival questions, pick the first date in the corpus ON OR AFTER today, and name it with its date.\n\nCORPUS:\n';
   const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + corpusContext();
   const SYSTEM_PROMPT_WORKER = SYSTEM_PROMPT_BASE + corpusContextCompact();
 
