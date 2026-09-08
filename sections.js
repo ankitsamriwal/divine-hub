@@ -13,6 +13,8 @@
     guides: 'guidesSection', why: 'whySection', nearby: 'nearbySection'
   };
 
+  const headerSearch = document.querySelector('.header-search');
+
   function show(which) {
     VIEWS.forEach(v => {
       const t = document.getElementById(TAB[v]);
@@ -20,7 +22,9 @@
       if (t) t.classList.toggle('active', v === which);
       if (sec) sec.hidden = v !== which;
     });
+    if (headerSearch) headerSearch.style.visibility = which === 'prayers' ? '' : 'hidden';
     window.scrollTo(0, 0);
+    try { history.replaceState(null, '', which === 'prayers' ? location.pathname : '#' + which); } catch (e) {}
     if (which === 'japa' && typeof drawMalaGlobal === 'function') drawMalaGlobal();
   }
 
@@ -35,6 +39,8 @@
         document.getElementById(TAB[x]).classList.remove('active');
         document.getElementById(SECTION[x]).hidden = true;
       });
+      if (headerSearch) headerSearch.style.visibility = v === 'prayers' ? '' : 'hidden';
+      try { history.replaceState(null, '', v === 'prayers' ? location.pathname : '#' + v); } catch (e) {}
     });
   });
 
@@ -111,4 +117,21 @@
       renderNearby(null);
     }, { timeout: 10000 });
   });
+
+  /* ---------- hash routing (deep links + manifest shortcuts) ---------- */
+  function routeHash() {
+    const h = (location.hash || '').replace(/^#/, '');
+    if (!h) return;
+    if (h.indexOf('prayer-') === 0 && typeof window.dhOpenPrayer === 'function') {
+      show('prayers');
+      document.getElementById(TAB.prayers).click();
+      window.dhOpenPrayer(h.slice(7));
+      return;
+    }
+    if (VIEWS.indexOf(h) !== -1) {
+      document.getElementById(TAB[h]).click();
+    }
+  }
+  window.addEventListener('hashchange', routeHash);
+  routeHash();
 })();

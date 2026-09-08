@@ -1,17 +1,17 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v10';
+const CACHE = 'divine-hub-v12';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=10',
-  './app.js?v=10',
-  './data.js?v=10',
-  './data2.js?v=10',
-  './festivals.js?v=10',
-  './guides.js?v=10',
-  './why.js?v=10',
-  './japa.js?v=10',
-  './sections.js?v=10',
+  './styles.css?v=12',
+  './app.js?v=12',
+  './data.js?v=12',
+  './data2.js?v=12',
+  './festivals.js?v=12',
+  './guides.js?v=12',
+  './why.js?v=12',
+  './japa.js?v=12',
+  './sections.js?v=12',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

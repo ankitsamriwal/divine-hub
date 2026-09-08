@@ -9,6 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Divine Hub">
+<meta property="og:title" content="Divine Hub — Aartis, Stotrams & Mantras">
+<meta property="og:description" content="Traditional aartis, chalisas, stotrams and mantras with Devanagari lyrics, transliteration, full English meaning, and audio narration.">
+<meta property="og:url" content="https://roadtodivinity.vercel.app/">
+<meta property="og:image" content="https://roadtodivinity.vercel.app/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Divine Hub — Aartis, Stotrams & Mantras">
+<meta name="twitter:description" content="A quiet place for sacred sound: aartis, chalisas, stotrams and mantras with meaning and narration.">
+<meta name="twitter:image" content="https://roadtodivinity.vercel.app/icons/icon-512.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#140f0b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=11">
+<link rel="stylesheet" href="styles.css?v=12">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -66,6 +76,14 @@
   <h2>A quiet place for sacred sound</h2>
   <p>Traditional aartis, chalisas, stotrams and mantras — with the original Devanagari, a gentle transliteration, the full meaning in English, and a voice to read them aloud.</p>
 </section>
+
+<button class="vod" id="verseOfDay" hidden aria-label="Open today's verse">
+  <span class="vod-label">आज का पाठ · Verse of the day</span>
+  <span class="vod-dev" id="vodDev"></span>
+  <span class="vod-translit" id="vodTranslit"></span>
+  <span class="vod-meaning" id="vodMeaning"></span>
+  <span class="vod-source" id="vodSource"></span>
+</button>
 
 <div class="deity-filter" id="deityFilter">
   <button id="deityFilterBtn" class="deity-filter-btn" aria-haspopup="true" aria-expanded="false">
@@ -224,6 +242,7 @@
 </div>
 
 <footer class="site-footer">
+  <button id="installBtn" class="install-btn" hidden>⤓ Install Divine Hub on this device</button>
   <p>These prayers are centuries-old traditional works in the public domain, compiled with care and reverence. Texts follow widely sung canonical versions; minor regional variations exist.</p>
   <p class="footer-om">॥ शान्तिः शान्तिः शान्तिः ॥</p>
 </footer>
@@ -233,13 +252,13 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=11"></script>
-<script src="data2.js?v=11"></script>
-<script src="festivals.js?v=11"></script>
-<script src="guides.js?v=11"></script>
-<script src="why.js?v=11"></script>
-<script src="app.js?v=11"></script>
-<script src="japa.js?v=11"></script>
-<script src="sections.js?v=11"></script>
+<script src="data.js?v=12"></script>
+<script src="data2.js?v=12"></script>
+<script src="festivals.js?v=12"></script>
+<script src="guides.js?v=12"></script>
+<script src="why.js?v=12"></script>
+<script src="app.js?v=12"></script>
+<script src="japa.js?v=12"></script>
+<script src="sections.js?v=12"></script>
 </body>
 </html>

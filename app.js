@@ -22,6 +22,20 @@
 
   let activeDeities = new Set();
   let searchQuery = '';
+  let favsOnly = false;
+
+  /* ---------- favorites (नित्य practice) ---------- */
+  const FAV_KEY = 'dh_favs_v1';
+  let favs = [];
+  try { favs = JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { favs = []; }
+  const isFav = id => favs.includes(id);
+  function saveFavs() { try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch (e) {} }
+  function toggleFav(id) {
+    if (isFav(id)) favs = favs.filter(x => x !== id); else favs.push(id);
+    saveFavs();
+    if (favsOnly) renderGrid();
+    updateFavRow();
+  }
 
   const deityOrder = ['Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati', 'Radha', 'Surya', 'Sai Baba', 'Sheetla Mata', 'Santoshi Mata', 'Bhairav'];
 
@@ -31,11 +45,35 @@
   const filterLabel = document.getElementById('deityFilterLabel');
 
   function updateFilterLabel() {
+    if (favsOnly) { filterLabel.textContent = '★ Favorites'; return; }
     const n = activeDeities.size;
     if (!n) { filterLabel.textContent = 'All deities'; return; }
     const arr = [...activeDeities];
     filterLabel.textContent = n <= 2 ? arr.join(' + ') : n + ' deities selected';
   }
+
+  const favRow = document.createElement('button');
+  favRow.type = 'button';
+  favRow.className = 'deity-option fav-option';
+  favRow.setAttribute('role', 'menuitemcheckbox');
+  favRow.setAttribute('aria-checked', 'false');
+  favRow.addEventListener('click', () => {
+    favsOnly = !favsOnly;
+    if (favsOnly) {
+      activeDeities.clear();
+      Object.values(optionRows).forEach(r => { r.classList.remove('selected'); r.setAttribute('aria-checked', 'false'); });
+      clearRow.hidden = true;
+    }
+    favRow.classList.toggle('selected', favsOnly);
+    favRow.setAttribute('aria-checked', String(favsOnly));
+    updateFilterLabel();
+    renderGrid();
+  });
+  filterMenu.appendChild(favRow);
+  function updateFavRow() {
+    favRow.innerHTML = `<span class="df-check" aria-hidden="true"></span><span class="df-name">★ Favorites</span><span class="df-count">${favs.length}</span>`;
+  }
+  updateFavRow();
 
   const optionRows = {};
   deityOrder.forEach(d => {
@@ -47,6 +85,7 @@
     const count = PRAYERS.filter(p => p.deity === d).length;
     row.innerHTML = `<span class="df-check" aria-hidden="true"></span><span class="df-name">${d}</span><span class="df-count">${count}</span>`;
     row.addEventListener('click', () => {
+      if (favsOnly) { favsOnly = false; favRow.classList.remove('selected'); favRow.setAttribute('aria-checked', 'false'); }
       if (activeDeities.has(d)) activeDeities.delete(d); else activeDeities.add(d);
       const on = activeDeities.has(d);
       row.classList.toggle('selected', on);
@@ -88,6 +127,7 @@
 
   /* ---------- grid ---------- */
   function prayerMatches(p) {
+    if (favsOnly && !isFav(p.id)) return false;
     if (activeDeities.size && !activeDeities.has(p.deity)) return false;
     if (!searchQuery) return true;
     const hay = [p.title, p.titleDev, p.deity, p.deityDev, p.type, p.about, (p.keywords || []).join(' '),
@@ -99,7 +139,9 @@
     grid.innerHTML = '';
     const list = PRAYERS.filter(prayerMatches);
     if (!list.length) {
-      grid.innerHTML = '<div class="empty-state">No prayers match. Try another deity or search term.</div>';
+      grid.innerHTML = favsOnly && !favs.length
+        ? '<div class="empty-state">No favorites yet. Tap the ☆ on any prayer to keep it here for your daily practice.</div>'
+        : '<div class="empty-state">No prayers match. Try another deity or search term.</div>';
       return;
     }
     list.forEach(p => {
@@ -108,6 +150,24 @@
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-label', p.title);
+      const favBtn = document.createElement('button');
+      favBtn.type = 'button';
+      favBtn.className = 'fav-btn' + (isFav(p.id) ? ' fav-on' : '');
+      favBtn.setAttribute('aria-label', isFav(p.id) ? 'Remove from favorites' : 'Add to favorites');
+      favBtn.textContent = isFav(p.id) ? '★' : '☆';
+      favBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleFav(p.id);
+        document.querySelectorAll('.card').forEach(c => {
+          if (c.dataset.pid === p.id) {
+            const b = c.querySelector('.fav-btn');
+            const on = isFav(p.id);
+            b.classList.toggle('fav-on', on);
+            b.textContent = on ? '★' : '☆';
+            b.setAttribute('aria-label', on ? 'Remove from favorites' : 'Add to favorites');
+          }
+        });
+      });
       const firstLines = p.stanzas[0].dev.slice(0, 2).join('<br>');
       const verseCount = p.stanzas.length;
       card.innerHTML = `
@@ -118,6 +178,8 @@
         <h3>${p.title}</h3>
         <div class="card-dev">${firstLines}</div>
         <div class="card-meta">${verseCount} verse${verseCount === 1 ? '' : 's'} · ${p.lang === 'sa' ? 'Sanskrit' : 'Hindi'}</div>`;
+      card.dataset.pid = p.id;
+      card.appendChild(favBtn);
       card.addEventListener('click', () => openPrayer(p.id));
       card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPrayer(p.id); } });
       grid.appendChild(card);
@@ -137,6 +199,7 @@
     prayerView.hidden = false;
     document.body.style.overflow = 'hidden';
     prayerView.scrollTop = 0;
+    try { window.history.replaceState(null, '', '#prayer-' + id); } catch (e) {}
   }
 
   function closePrayer() {
@@ -144,7 +207,10 @@
     prayerView.hidden = true;
     document.body.style.overflow = '';
     currentPrayer = null;
+    try { window.history.replaceState(null, '', location.pathname); } catch (e) {}
   }
+  window.dhOpenPrayer = openPrayer;
+  window.dhPrayerOpen = () => !prayerView.hidden;
   closePrayerBtn.addEventListener('click', closePrayer);
   prayerView.addEventListener('click', e => { if (e.target === prayerView) closePrayer(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !prayerView.hidden) closePrayer(); });
@@ -157,6 +223,10 @@
       <h2 class="pv-title">${p.title}</h2>
       <div class="pv-title-dev">${p.titleDev}</div>
       <p class="pv-about">${p.about}</p>
+      <div class="pv-actions">
+        <button id="pvFav" class="pv-action${isFav(p.id) ? ' fav-on' : ''}">${isFav(p.id) ? '★ Saved' : '☆ Save'}</button>
+        <button id="pvShare" class="pv-action">↗ Share</button>
+      </div>
       <div class="listen-bar">
         <span class="listen-label">Listen</span>
         <select id="ttsLang" aria-label="Narration language">
@@ -189,6 +259,44 @@
     document.getElementById('ttsPlay').addEventListener('click', speakCurrent);
     document.getElementById('ttsStop').addEventListener('click', stopSpeech);
     document.getElementById('ttsLang').addEventListener('change', stopSpeech);
+
+    document.getElementById('pvFav').addEventListener('click', () => {
+      toggleFav(p.id);
+      const on = isFav(p.id);
+      const b = document.getElementById('pvFav');
+      b.classList.toggle('fav-on', on);
+      b.textContent = on ? '★ Saved' : '☆ Save';
+      renderGrid();
+    });
+    document.getElementById('pvShare').addEventListener('click', () => sharePrayer(p));
+  }
+
+  /* ---------- share ---------- */
+  function sharePrayer(p) {
+    const url = location.origin + location.pathname + '#prayer-' + p.id;
+    const text = p.title + ' (' + p.titleDev + ') — ' + p.type + ' of ' + p.deity;
+    if (navigator.share) {
+      navigator.share({ title: p.title + ' — Divine Hub', text: text, url: url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(text + '\n' + url).then(() => toast('Link copied — share it anywhere'), () => toast(url));
+    } else {
+      toast(url);
+    }
+  }
+
+  let toastTimer = null;
+  function toast(msg) {
+    let t = document.getElementById('dhToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'dhToast';
+      t.className = 'dh-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
   }
 
   function renderStanzas() {
@@ -695,6 +803,44 @@
     input.value = '';
     respond(q);
   });
+
+  /* ---------- verse of the day ---------- */
+  (function verseOfDay() {
+    const el = document.getElementById('verseOfDay');
+    if (!el || !PRAYERS.length) return;
+    const pool = [];
+    PRAYERS.forEach(p => p.stanzas.forEach((s, si) => pool.push({ p: p, s: s, si: si })));
+    if (!pool.length) return;
+    const dayIndex = Math.floor(Date.now() / 86400000);
+    const pick = pool[dayIndex % pool.length];
+    document.getElementById('vodDev').textContent = pick.s.dev.slice(0, 2).join(' ');
+    document.getElementById('vodTranslit').textContent = pick.s.translit.slice(0, 2).join(' ');
+    const meaning = pick.s.meaning.length > 180 ? pick.s.meaning.slice(0, 177).trimEnd() + '…' : pick.s.meaning;
+    document.getElementById('vodMeaning').textContent = meaning;
+    document.getElementById('vodSource').textContent = pick.p.title + ' · ' + pick.p.deity;
+    el.hidden = false;
+    el.addEventListener('click', () => openPrayer(pick.p.id));
+  })();
+
+  /* ---------- PWA install prompt ---------- */
+  (function installPrompt() {
+    const btn = document.getElementById('installBtn');
+    if (!btn) return;
+    let deferred = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferred = e;
+      btn.hidden = false;
+    });
+    btn.addEventListener('click', async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      try { await deferred.userChoice; } catch (e) {}
+      deferred = null;
+      btn.hidden = true;
+    });
+    window.addEventListener('appinstalled', () => { btn.hidden = true; deferred = null; });
+  })();
 
   renderGrid();
 })();
