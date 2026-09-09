@@ -1017,3 +1017,154 @@ body {
   transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 .install-btn:hover { background: var(--gold); color: var(--ink); box-shadow: 0 0 22px rgba(226, 169, 78, 0.35); }
+
+/* ---------- focus mode ---------- */
+.focus-view {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fv-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(217, 112, 44, 0.16), transparent 62%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(226, 169, 78, 0.12), transparent 60%);
+}
+.fv-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem 0.6rem;
+  position: relative;
+  z-index: 2;
+}
+.fv-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fv-deity { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.fv-title { font-size: 0.95rem; font-weight: 600; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fv-close {
+  flex-shrink: 0;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--gold-dim);
+  background: transparent;
+  color: var(--cream-dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.fv-close:hover { border-color: var(--gold); color: var(--gold); }
+.fv-progress {
+  height: 2px;
+  margin: 0 1.25rem;
+  background: rgba(226, 169, 78, 0.14);
+  border-radius: 2px;
+  position: relative;
+  z-index: 2;
+}
+.fv-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-soft), var(--gold));
+  border-radius: 2px;
+  transition: width 0.35s ease;
+}
+.fv-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem 1.75rem;
+  position: relative;
+  z-index: 2;
+  overflow-y: auto;
+}
+.fv-enter { animation: fvIn 0.4s ease; }
+@keyframes fvIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fv-om {
+  font-family: var(--font-dev);
+  font-size: 2.4rem;
+  color: var(--gold);
+  opacity: 0.35;
+  margin-bottom: 0.75rem;
+}
+.fv-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin-bottom: 1.4rem;
+}
+.fv-dev {
+  font-family: var(--font-dev);
+  font-size: clamp(1.5rem, 5.6vw, 2.2rem);
+  line-height: 1.75;
+  color: var(--cream);
+  max-width: 34rem;
+  text-shadow: 0 0 34px rgba(226, 169, 78, 0.16);
+}
+.fv-translit {
+  margin-top: 1.2rem;
+  font-size: 0.92rem;
+  font-style: italic;
+  line-height: 1.7;
+  color: var(--cream-dim);
+  max-width: 30rem;
+}
+.fv-accordion { margin-top: 1.6rem; width: 100%; max-width: 30rem; }
+.fv-acc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: rgba(226, 169, 78, 0.07);
+  border: 1px solid var(--gold-dim);
+  border-radius: 12px;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.fv-acc-btn:hover { border-color: var(--gold); }
+.fv-acc-caret { transition: transform 0.25s; font-size: 0.85rem; }
+.fv-acc-body {
+  margin-top: 0.6rem;
+  padding: 0.9rem 1rem;
+  border-left: 2px solid var(--gold-dim);
+  text-align: left;
+  color: var(--cream-dim);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+.fv-nav {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem calc(1.1rem + env(safe-area-inset-bottom));
+  position: relative;
+  z-index: 2;
+}
+.fv-nav-btn {
+  flex: 1;
+  padding: 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--gold-dim);
+  background: transparent;
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fv-nav-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.fv-nav-btn:disabled { opacity: 0.35; cursor: default; }
+.fv-next { background: linear-gradient(135deg, rgba(226,169,78,0.18), rgba(217,112,44,0.14)); }

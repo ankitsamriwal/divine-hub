@@ -226,6 +226,7 @@
       <div class="pv-actions">
         <button id="pvFav" class="pv-action${isFav(p.id) ? ' fav-on' : ''}">${isFav(p.id) ? '★ Saved' : '☆ Save'}</button>
         <button id="pvShare" class="pv-action">↗ Share</button>
+        <button id="pvFocus" class="pv-action pv-focus">🪔 Focus mode</button>
       </div>
       <div class="listen-bar">
         <span class="listen-label">Listen</span>
@@ -269,6 +270,7 @@
       renderGrid();
     });
     document.getElementById('pvShare').addEventListener('click', () => sharePrayer(p));
+    document.getElementById('pvFocus').addEventListener('click', () => { if (window.dhOpenFocus) window.dhOpenFocus(p.id); });
   }
 
   /* ---------- share ---------- */
