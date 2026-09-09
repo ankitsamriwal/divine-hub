@@ -39,7 +39,7 @@
       if (!AC) return null;
       actx = new AC();
       bellGain = actx.createGain();
-      bellGain.gain.value = 0.55; // gentle, humble - never loud
+      bellGain.gain.value = 0.38; // gentle, humble - never loud
       bellGain.connect(actx.destination);
       loadBells();
     }
@@ -54,7 +54,7 @@
       src.buffer = bellBuf;
       var g = actx.createGain();
       g.gain.setValueAtTime(0.0001, actx.currentTime);
-      g.gain.linearRampToValueAtTime(1, actx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(1, actx.currentTime + 0.4);
       g.gain.setValueAtTime(1, actx.currentTime + Math.max(0.2, dur - 0.9));
       g.gain.linearRampToValueAtTime(0.0001, actx.currentTime + dur + 0.4);
       src.connect(g); g.connect(bellGain);
