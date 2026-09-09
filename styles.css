@@ -1801,3 +1801,4 @@ body {
   .card { padding: 1.2rem 1.3rem; }
   .zone { margin-top: 2rem; }
 }
+.dg-body[hidden] { display: none; }
