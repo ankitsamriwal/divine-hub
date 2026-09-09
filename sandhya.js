@@ -1,13 +1,12 @@
 /* ---------- Sandhya Aarti: the evening temple gate ----------
-   At sandhya (dusk) a temple gate opens on the home page. The devotee makes a
-   small offering (min Rs 21), the doors part, and a 15-20 minute aarti sequence
-   plays - three aartis back to back with bell strikes and the temple feel.
+   At sandhya (dusk) a temple gate opens on the home page. The devotee steps in,
+   the doors part, and a ~17 minute aarti sequence plays - three aartis back to
+   back with bell strikes and the temple feel. Free, no donation step.
 
-   PAYMENT SEAM: the money rail is deliberately isolated in window.dhSandhyaPay.
-   It is in TEST MODE now (no real charge). When the merchant decision lands
-   (Razorpay or UPI-first), replace pay() with the real checkout call and flip
-   mode to 'live' - keep the {amountINR} -> Promise<{ok, id}> contract and the
-   rest of the flow works unchanged. */
+   PAYMENT + EMAIL SEAMS (DORMANT): donations were removed by user decision
+   (Sep 2026, unclear tax treatment of donations to an individual in India).
+   window.dhSandhyaPay and sendConfirmation() stay in the codebase, never
+   called. Revive only if the user explicitly re-asks for donations. */
 (function () {
   'use strict';
 
@@ -19,8 +18,10 @@
     titleMs: 8000,           // aarti title card
     set: ['jai-ganesh-deva', 'om-jai-jagdish-hare', 'hanuman-aarti']
   };
-  var LS_KEY = 'divinehub_sandhya_v1';
-
+  /* DORMANT by user decision (Sep 2026): no donations on the site - Indian tax
+     treatment of donations to an individual is unclear. This payment seam and the
+     email-confirmation seam below stay in the codebase but are NEVER called.
+     Revive only if the user explicitly re-asks for donations. */
   window.dhSandhyaPay = {
     mode: 'test',
     pay: function (opts) {
@@ -30,12 +31,6 @@
       });
     }
   };
-
-  function store() {
-    try { return JSON.parse(localStorage.getItem(LS_KEY)) || { offerings: [] }; }
-    catch (e) { return { offerings: [] }; }
-  }
-  function save(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {} }
 
   function nowMin() {
     var d = new Date();
@@ -120,17 +115,14 @@
     var card = document.getElementById('syCard');
     if (!card) return;
     var open = gateOpen();
-    var s = store();
-    var last = s.offerings.length ? s.offerings[s.offerings.length - 1] : null;
     if (open) {
       card.className = 'sy-card sy-open';
       card.innerHTML =
         '<div class="sy-glow" aria-hidden="true"></div>' +
         '<span class="sy-kicker">संध्या · SANDHYA</span>' +
         '<h3 class="sy-title">The temple gate is open</h3>' +
-        '<p class="sy-sub">Three aartis, about ' + totalMinutes() + ' minutes, with bells. A small offering (min ₹' + CFG.minAmount + ') lights the lamp.</p>' +
-        '<button class="sy-enter" id="syEnter">Enter the aarti</button>' +
-        (last ? '<span class="sy-last">Last offering: ₹' + last.amount + '</span>' : '');
+        '<p class="sy-sub">Three aartis, about ' + totalMinutes() + ' minutes, with bells. Step in and sit a while.</p>' +
+        '<button class="sy-enter" id="syEnter">Enter the aarti</button>';
       card.querySelector('#syEnter').addEventListener('click', function () { openFlow(false); });
     } else {
       card.className = 'sy-card sy-closed';
@@ -156,8 +148,8 @@
 
   function openFlow(preview) {
     ensureAudio();
-    state = { preview: preview, amount: CFG.minAmount, step: 'offer' };
-    renderOffer();
+    state = { preview: preview, step: 'doors' };
+    renderDoors();
     view.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -170,92 +162,8 @@
 
   function stopTimer() { if (timer) { clearTimeout(timer); timer = null; } }
 
-  /* ----- step 1: offering ----- */
-  function renderOffer() {
-    state.step = 'offer';
-    var chips = [21, 51, 101, 201];
-    view.innerHTML =
-      '<div class="syv-inner">' +
-      '<button class="syv-close" id="syvX" aria-label="Close">✕</button>' +
-      '<span class="sy-kicker">संध्या आरती</span>' +
-      '<h3 class="syv-h">Make your offering</h3>' +
-      '<p class="syv-p">A diya is lit in your name tonight. Minimum ₹' + CFG.minAmount + ', give what your heart says.</p>' +
-      '<div class="sy-chips">' + chips.map(function (c) {
-        return '<button class="sy-chip" data-a="' + c + '">₹' + c + '</button>';
-      }).join('') + '</div>' +
-      '<div class="sy-custom"><span>₹</span><input id="syAmt" type="number" min="' + CFG.minAmount + '" step="1" value="' + CFG.minAmount + '" inputmode="numeric"></div>' +
-      '<input class="sy-field" id="syName" type="text" placeholder="Your name" autocomplete="name">' +
-      '<input class="sy-field" id="syEmail" type="email" placeholder="Email for the confirmation" autocomplete="email" inputmode="email">' +
-      '<p class="sy-err" id="syErr" hidden>At least ₹' + CFG.minAmount + ', please.</p>' +
-      '<p class="sy-err" id="syErrWho" hidden>Name and a valid email, please - the confirmation goes there.</p>' +
-      '<button class="sy-offer" id="syGo">Offer ₹' + CFG.minAmount + '</button>' +
-      (window.dhSandhyaPay.mode === 'test' ? '<p class="sy-test">Test mode - no real charge yet. The payment rail plugs in here.</p>' : '') +
-      '</div>';
-    var amt = view.querySelector('#syAmt');
-    var go = view.querySelector('#syGo');
-    function sync() {
-      var v = parseInt(amt.value, 10);
-      state.amount = isNaN(v) ? 0 : v;
-      go.textContent = 'Offer ₹' + (isNaN(v) ? '…' : v);
-    }
-    view.querySelectorAll('.sy-chip').forEach(function (b) {
-      b.addEventListener('click', function () {
-        amt.value = b.dataset.a;
-        view.querySelectorAll('.sy-chip').forEach(function (x) { x.classList.remove('on'); });
-        b.classList.add('on');
-        sync();
-      });
-    });
-    amt.addEventListener('input', sync);
-    view.querySelector('#syvX').addEventListener('click', closeFlow);
-    go.addEventListener('click', function () {
-      sync();
-      var name = view.querySelector('#syName').value.trim();
-      var email = view.querySelector('#syEmail').value.trim();
-      var okMail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-      view.querySelector('#syErr').hidden = state.amount >= CFG.minAmount;
-      view.querySelector('#syErrWho').hidden = !!(name && okMail);
-      if (state.amount < CFG.minAmount || !name || !okMail) return;
-      state.name = name;
-      state.email = email;
-      renderMockPay();
-    });
-  }
-
-  /* ----- step 1b: mock payment screen (real Razorpay/UPI rail drops in here) ----- */
-  function renderMockPay() {
-    state.step = 'mockpay';
-    view.innerHTML =
-      '<div class="syv-inner">' +
-      '<span class="sy-kicker">MOCK CHECKOUT</span>' +
-      '<h3 class="syv-h">₹' + state.amount + '</h3>' +
-      '<p class="syv-p">' + state.name + ' · ' + state.email + '</p>' +
-      '<div class="sy-paybox">' +
-      '<div class="sy-payrow"><span>Sandhya Aarti offering</span><span>₹' + state.amount + '</span></div>' +
-      '<div class="sy-payrow sy-payrow-dim"><span>Divine Hub (test merchant)</span><span>tonight\u2019s diya</span></div>' +
-      '</div>' +
-      '<button class="sy-offer" id="syPay">Pay ₹' + state.amount + ' (mock)</button>' +
-      '<p class="sy-test">Mock screen - no real charge. Razorpay or UPI replaces this exact step.</p>' +
-      '<button class="sy-back" id="syBack">‹ back</button>' +
-      '</div>';
-    view.querySelector('#syBack').addEventListener('click', renderOffer);
-    view.querySelector('#syPay').addEventListener('click', function () {
-      var b = view.querySelector('#syPay');
-      b.disabled = true;
-      b.textContent = 'Processing…';
-      window.dhSandhyaPay.pay({ amountINR: state.amount, name: state.name, email: state.email }).then(function (r) {
-        if (!r || !r.ok) { b.disabled = false; b.textContent = 'Try again'; return; }
-        state.payId = r.id;
-        var s = store();
-        s.offerings.push({ amount: state.amount, id: r.id, name: state.name, email: state.email, ts: Date.now(), mode: window.dhSandhyaPay.mode });
-        save(s);
-        sendConfirmation(); // fire and forget - never blocks the aarti
-        renderPaid();
-      });
-    });
-  }
-
-  /* ----- email seam: confirmation notice. Real rail (or worker + provider) owns this later. ----- */
+  /* ----- DORMANT email seam: confirmation notice. Kept for the day a rail returns;
+     nothing calls sendConfirmation() while donations are removed. ----- */
   function sendConfirmation() {
     var payload = {
       name: state.name, email: state.email, amount: state.amount,
@@ -268,22 +176,6 @@
         body: JSON.stringify(payload)
       }).catch(function () {});
     } catch (e) {}
-  }
-
-  /* ----- paid: in-app confirmation, then the doors ----- */
-  function renderPaid() {
-    state.step = 'paid';
-    view.innerHTML =
-      '<div class="syv-inner sy-paid">' +
-      '<div class="sy-tick" aria-hidden="true">✓</div>' +
-      '<h3 class="syv-h">Offering received, ' + state.name.split(' ')[0] + '</h3>' +
-      '<p class="syv-p">₹' + state.amount + ' · confirmation ' + state.payId + '<br>' +
-      (window.dhSandhyaPay.mode === 'test'
-        ? 'A confirmation notice for <b>' + state.email + '</b> is recorded (mock email in test mode).'
-        : 'A confirmation email is on its way to <b>' + state.email + '</b>.') + '</p>' +
-      '<p class="syv-p syv-enter-note">The doors are opening…</p>' +
-      '</div>';
-    timer = setTimeout(renderDoors, 2200);
   }
 
   /* ----- step 2: doors ----- */
@@ -413,7 +305,7 @@
       '<div class="sy-diya" aria-hidden="true"><div class="sy-flame"></div></div>' +
       '<p class="sy-shanti">॥ शान्तिः शान्तिः शान्तिः ॥</p>' +
       '<h3 class="syv-h">' + (early ? 'Aarti paused midway' : 'Your sandhya aarti is complete') + '</h3>' +
-      '<p class="syv-p">Offering of ₹' + state.amount + ' received with gratitude' + (window.dhSandhyaPay.mode === 'test' ? ' (test mode)' : '') + '. Come back at dusk tomorrow.</p>' +
+      '<p class="syv-p">Come back at dusk tomorrow - the gate opens again at ' + fmtHour(CFG.openMin) + '.</p>' +
       '<button class="sy-offer" id="syDone">🙏 Dhanyavaad</button>' +
       '</div>';
     view.querySelector('#syDone').addEventListener('click', closeFlow);
