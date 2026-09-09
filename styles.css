@@ -1758,6 +1758,16 @@ body {
 .dg-head:hover { border-color: var(--gold); box-shadow: 0 0 16px rgba(226, 169, 78, 0.12); }
 .dg-name { flex: 1; display: flex; align-items: baseline; gap: 0.6rem; }
 .dg-dev { font-family: var(--font-dev); color: var(--gold); font-size: 1.1rem; }
+.dg-name { min-width: 0; }
+.dg-name-stack { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+.dg-sub {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  font-weight: 400;
+}
 .dg-count {
   font-family: var(--font-mono);
   font-size: 0.68rem;
