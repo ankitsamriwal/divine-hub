@@ -206,6 +206,7 @@
       '<p class="jv-about">' + j.about + '</p>' +
       '<div class="jv-meta">' + st.done + ' of ' + st.total + ' episodes done</div>' +
       '<div class="jn-bar jv-bar"><span class="jn-fill" style="width:' + Math.round((st.done / st.total) * 100) + '%"></span></div>' +
+      (window.dhQuiz && window.dhQuiz.has(jid) ? '<button class="jv-quiz" id="jvQuiz">🧩 Take the ' + j.title.split(':')[0] + ' quiz</button>' : '') +
       '<div class="jv-eps">' + j.episodes.map((e, ei) => {
         const done = isDone(j, ei, state);
         return '<div class="jv-ep' + (done ? ' done' : '') + '">' +
@@ -220,6 +221,8 @@
     overlay.hidden = false;
     document.body.style.overflow = 'hidden';
     overlay.querySelector('#jvClose').addEventListener('click', closeJourney);
+    const qzBtn = overlay.querySelector('#jvQuiz');
+    if (qzBtn) qzBtn.addEventListener('click', () => { if (window.dhQuiz) window.dhQuiz.journey(jid); });
     overlay.querySelectorAll('.jv-ep-main').forEach(b =>
       b.addEventListener('click', () => startEpisode(jid, parseInt(b.dataset.e, 10))));
     overlay.querySelectorAll('.jv-ep-mark').forEach(b =>
