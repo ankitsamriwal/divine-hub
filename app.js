@@ -135,16 +135,7 @@
     return hay.includes(searchQuery);
   }
 
-  function renderGrid() {
-    grid.innerHTML = '';
-    const list = PRAYERS.filter(prayerMatches);
-    if (!list.length) {
-      grid.innerHTML = favsOnly && !favs.length
-        ? '<div class="empty-state">No favorites yet. Tap the ☆ on any prayer to keep it here for your daily practice.</div>'
-        : '<div class="empty-state">No prayers match. Try another deity or search term.</div>';
-      return;
-    }
-    list.forEach(p => {
+  function buildCard(p) {
       const card = document.createElement('article');
       card.className = 'card';
       card.tabIndex = 0;
@@ -182,7 +173,55 @@
       card.appendChild(favBtn);
       card.addEventListener('click', () => openPrayer(p.id));
       card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPrayer(p.id); } });
-      grid.appendChild(card);
+      return card;
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    const list = PRAYERS.filter(prayerMatches);
+    if (!list.length) {
+      grid.innerHTML = favsOnly && !favs.length
+        ? '<div class="empty-state">No favorites yet. Tap the ☆ on any prayer to keep it here for your daily practice.</div>'
+        : '<div class="empty-state">No prayers match. Try another deity or search term.</div>';
+      return;
+    }
+    // Browsing (no search / filter / favorites view): collapsible deity groups,
+    // collapsed by default - short page, big tap targets, nothing buried.
+    const grouped = !searchQuery && !activeDeities.size && !favsOnly;
+    if (!grouped) {
+      const flat = document.createElement('div');
+      flat.className = 'dg-flat';
+      list.forEach(p => flat.appendChild(buildCard(p)));
+      grid.appendChild(flat);
+      return;
+    }
+    deityOrder.forEach(d => {
+      const items = list.filter(p => p.deity === d);
+      if (!items.length) return;
+      const group = document.createElement('section');
+      group.className = 'dg-group';
+      const head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'dg-head';
+      head.setAttribute('aria-expanded', 'false');
+      const devName = (DEITIES[d] && DEITIES[d].dev) ? DEITIES[d].dev : '';
+      head.innerHTML =
+        '<span class="dg-name"><span class="dg-dev">' + devName + '</span>' + d + '</span>' +
+        '<span class="dg-count">' + items.length + ' prayer' + (items.length === 1 ? '' : 's') + '</span>' +
+        '<span class="dg-caret" aria-hidden="true">›</span>';
+      const body = document.createElement('div');
+      body.className = 'dg-body';
+      body.hidden = true;
+      items.forEach(p => body.appendChild(buildCard(p)));
+      head.addEventListener('click', () => {
+        const open = body.hidden;
+        body.hidden = !open;
+        head.setAttribute('aria-expanded', open ? 'true' : 'false');
+        group.classList.toggle('open', open);
+      });
+      group.appendChild(head);
+      group.appendChild(body);
+      grid.appendChild(group);
     });
   }
 

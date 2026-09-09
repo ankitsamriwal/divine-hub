@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=23">
+<link rel="stylesheet" href="styles.css?v=24">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -199,8 +199,23 @@
   <p class="info-sub">Verified dates from Drik Panchang and national holiday calendars. Hindu festivals follow the lunar calendar; regional observance can differ by a day.</p>
   <h3 class="info-h3">Upcoming</h3>
   <div id="festivalUpcoming" class="festival-upcoming"></div>
-  <h3 class="info-h3">Full calendar</h3>
-  <div id="festivalTable" class="festival-table"></div>
+  <button class="dg-head group-toggle" id="festTableToggle" type="button" aria-expanded="false">
+    <span class="dg-name">Full calendar 2026-2027</span>
+    <span class="dg-count">19 festivals</span>
+    <span class="dg-caret" aria-hidden="true">›</span>
+  </button>
+  <div id="festTableWrap" hidden>
+    <div id="festivalTable" class="festival-table"></div>
+  </div>
+  <script>
+  document.getElementById('festTableToggle').addEventListener('click', function () {
+    var w = document.getElementById('festTableWrap');
+    var open = w.hidden;
+    w.hidden = !open;
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    this.classList.toggle('open', open);
+  });
+  </script>
 </section>
 
 <section id="guidesSection" class="info-section" hidden>
@@ -275,21 +290,21 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=23"></script>
-<script src="data2.js?v=23"></script>
-<script src="data3.js?v=23"></script>
-<script src="festivals.js?v=23"></script>
-<script src="guides.js?v=23"></script>
-<script src="why.js?v=23"></script>
-<script src="app.js?v=23"></script>
-<script src="focus.js?v=23"></script>
-<script src="journeys.js?v=23"></script>
-<script src="sadhana.js?v=23"></script>
-<script src="quizzes.js?v=23"></script>
-<script src="almanac.js?v=23"></script>
-<script src="japa.js?v=23"></script>
-<script src="sections.js?v=23"></script>
-<script src="ambience.js?v=23"></script>
-<script src="backnav.js?v=23"></script>
+<script src="data.js?v=24"></script>
+<script src="data2.js?v=24"></script>
+<script src="data3.js?v=24"></script>
+<script src="festivals.js?v=24"></script>
+<script src="guides.js?v=24"></script>
+<script src="why.js?v=24"></script>
+<script src="app.js?v=24"></script>
+<script src="focus.js?v=24"></script>
+<script src="journeys.js?v=24"></script>
+<script src="sadhana.js?v=24"></script>
+<script src="quizzes.js?v=24"></script>
+<script src="almanac.js?v=24"></script>
+<script src="japa.js?v=24"></script>
+<script src="sections.js?v=24"></script>
+<script src="ambience.js?v=24"></script>
+<script src="backnav.js?v=24"></script>
 </body>
 </html>

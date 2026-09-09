@@ -1734,3 +1734,70 @@ body {
   .amb-intro:not(.amb-text-in) .hero h2,
   .amb-intro:not(.amb-text-in) .hero p { opacity: 1; transform: none; }
 }
+
+/* ---------- collapsible groups + elderly-friendly pass ---------- */
+.dg-group { margin: 0 1.5rem 0.7rem; }
+.dg-head {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1.25rem;
+  background: linear-gradient(160deg, rgba(42, 30, 20, 0.75), rgba(30, 22, 16, 0.75));
+  border: 1px solid var(--gold-dim);
+  border-radius: 14px;
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.dg-head:hover { border-color: var(--gold); box-shadow: 0 0 16px rgba(226, 169, 78, 0.12); }
+.dg-name { flex: 1; display: flex; align-items: baseline; gap: 0.6rem; }
+.dg-dev { font-family: var(--font-dev); color: var(--gold); font-size: 1.1rem; }
+.dg-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  white-space: nowrap;
+}
+.dg-caret { color: var(--gold); font-size: 1.3rem; transition: transform 0.2s; transform: rotate(90deg); }
+.dg-group.open .dg-caret, .group-toggle.open .dg-caret { transform: rotate(-90deg); }
+.dg-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.1rem;
+  padding: 0.9rem 0.15rem 0.6rem;
+}
+.dg-flat {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.2rem;
+}
+.group-toggle { max-width: 1100px; margin: 1.2rem auto 0; width: calc(100% - 3rem); display: flex; }
+#festTableWrap { max-width: 1100px; margin: 0 auto; padding: 0.9rem 1.5rem 0; }
+
+/* prayer-grid becomes a simple stack of groups */
+.zone .prayer-grid { display: block; }
+
+/* bigger tap targets + more readable type, especially for elderly users */
+.card .card-dev { font-size: 1rem; line-height: 1.65; }
+.sd-item { min-height: 56px; }
+.preset, .mode-btn { min-height: 44px; padding: 0.55rem 1.1rem; }
+.view-tab { min-height: 40px; }
+.pz-card { min-height: 64px; }
+.jn-card { min-height: 96px; }
+.deity-option { min-height: 48px; }
+.deity-filter-btn { min-height: 46px; }
+.prayers-tools .header-search input { min-height: 46px; font-size: 1rem; }
+@media (max-width: 640px) {
+  .dg-body, .dg-flat { grid-template-columns: 1fr; }
+  .dg-head { font-size: 1.02rem; min-height: 60px; }
+  .card { padding: 1.2rem 1.3rem; }
+  .zone { margin-top: 2rem; }
+}
