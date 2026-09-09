@@ -126,6 +126,8 @@
       show('prayers');
       document.getElementById(TAB.prayers).click();
       window.dhOpenPrayer(h.slice(7));
+      /* consume the deep link so navigating back to this entry cannot reopen the view */
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
       return;
     }
     if (VIEWS.indexOf(h) !== -1) {

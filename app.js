@@ -238,7 +238,7 @@
     prayerView.hidden = false;
     document.body.style.overflow = 'hidden';
     prayerView.scrollTop = 0;
-    try { window.history.replaceState(null, '', '#prayer-' + id); } catch (e) {}
+    /* no hash on open: backnav's history entries must not carry #prayer-, or closing reopens via routeHash */
   }
 
   function closePrayer() {
