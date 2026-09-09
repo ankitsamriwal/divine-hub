@@ -60,7 +60,7 @@
   function sequence() {
     var out = [];
     CFG.set.forEach(function (id) {
-      var p = (window.PRAYERS || []).find(function (x) { return x.id === id; });
+      var p = (typeof PRAYERS !== 'undefined' ? PRAYERS : []).find(function (x) { return x.id === id; });
       if (p) out.push(p);
     });
     return out;

@@ -1,5 +1,5 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v26';
+const CACHE = 'divine-hub-v27';
 const CORE = [
   './',
   './index.html',
