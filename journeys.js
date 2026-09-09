@@ -131,14 +131,14 @@
 
   /* ---------- home section ---------- */
   function renderSection() {
-    const vod = document.getElementById('verseOfDay');
-    if (!vod) return;
+    const zone = document.getElementById('zonePractice');
+    if (!zone) return;
     let sec = document.getElementById('journeysSection');
     if (!sec) {
       sec = document.createElement('section');
       sec.id = 'journeysSection';
       sec.className = 'journeys-section';
-      vod.insertAdjacentElement('afterend', sec);
+      zone.appendChild(sec);
     }
     const state = load();
 

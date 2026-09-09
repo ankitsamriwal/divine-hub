@@ -114,14 +114,14 @@
 
   /* ---------- checklist card ---------- */
   function renderCard() {
-    const vod = document.getElementById('verseOfDay');
-    if (!vod) return;
+    const zone = document.getElementById('zoneSadhana');
+    if (!zone) return;
     let sec = document.getElementById('sadhanaSection');
     if (!sec) {
       sec = document.createElement('section');
       sec.id = 'sadhanaSection';
       sec.className = 'sadhana-section';
-      vod.insertAdjacentElement('afterend', sec);
+      zone.appendChild(sec);
     }
     const { day } = dayState();
     const streak = computeStreak();

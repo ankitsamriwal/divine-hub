@@ -201,14 +201,14 @@
 
   /* ---------- home card ---------- */
   function renderPuzzleCard() {
-    const jn = document.getElementById('journeysSection');
-    if (!jn) { setTimeout(renderPuzzleCard, 400); return; }
+    const zone = document.getElementById('zonePractice');
+    if (!zone || !document.getElementById('journeysSection')) { setTimeout(renderPuzzleCard, 400); return; }
     let sec = document.getElementById('puzzleSection');
     if (!sec) {
       sec = document.createElement('section');
       sec.id = 'puzzleSection';
       sec.className = 'puzzle-section';
-      jn.insertAdjacentElement('afterend', sec);
+      zone.appendChild(sec);
     }
     const s = load();
     const doneToday = s.puzzle && s.puzzle.day === todayStr() && s.puzzle.done;

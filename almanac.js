@@ -97,14 +97,14 @@
 
   /* ---------- section ---------- */
   function render() {
-    const anchor = document.getElementById('puzzleSection') || document.getElementById('journeysSection');
-    if (!anchor) { setTimeout(render, 400); return; }
+    const zone = document.getElementById('zoneSadhana');
+    if (!zone) { setTimeout(render, 400); return; }
     let sec = document.getElementById('almanacSection');
     if (!sec) {
       sec = document.createElement('section');
       sec.id = 'almanacSection';
       sec.className = 'almanac-section';
-      anchor.insertAdjacentElement('afterend', sec);
+      zone.appendChild(sec);
     }
     const s = load();
     const members = s.members || [];

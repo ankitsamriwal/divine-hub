@@ -1644,3 +1644,75 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .amb-petal, .amb-smoke { display: none !important; }
 }
+
+/* ---------- home zones: sadhana / prayers / practice ---------- */
+.zone {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 2.6rem auto 0;
+}
+.zone:first-of-type { margin-top: 2.2rem; }
+.zone-head {
+  text-align: center;
+  margin: 0 1.5rem 1.3rem;
+}
+.zone-title {
+  font-family: 'Space Grotesk', sans-serif;
+  color: #e8c97a;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+.zone-title::before,
+.zone-title::after {
+  content: "";
+  height: 1px;
+  flex: 0 1 72px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim));
+}
+.zone-title::after {
+  background: linear-gradient(90deg, var(--gold-dim), transparent);
+}
+.zone-sub {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--cream-dim);
+}
+/* zone children already carry their own max-width/padding; just rhythm */
+.zone .sadhana-section,
+.zone .almanac-section,
+.zone .journeys-section,
+.zone .puzzle-section {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.zone .almanac-section { margin-top: 0.85rem; }
+.zone .puzzle-section { margin-top: 0.85rem; }
+
+/* prayers zone: verse, then search + deity filter in one aligned row, then grid */
+.zone .vod { margin-bottom: 1.5rem; }
+.prayers-tools {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0 1.5rem 1.6rem;
+}
+.prayers-tools .header-search input { width: min(320px, 100%); }
+.prayers-tools .deity-filter { padding: 0; }
+.prayers-tools .deity-menu { top: calc(100% + 0.4rem); }
+.zone .prayer-grid { padding-bottom: 0.5rem; }
+
+@media (max-width: 640px) {
+  .zone { margin-top: 2.2rem; }
+  .zone-title { font-size: 1.12rem; }
+  .prayers-tools { flex-direction: column; gap: 0.7rem; }
+  .prayers-tools .header-search,
+  .prayers-tools .header-search input { width: 100%; max-width: 400px; }
+}

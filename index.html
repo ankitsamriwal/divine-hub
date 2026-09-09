@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=21">
+<link rel="stylesheet" href="styles.css?v=22">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -50,9 +50,6 @@
       <button id="tabJapa" class="view-tab">Japa Counter</button>
       <button id="tabFestivals" class="view-tab">Festivals</button>
     </nav>
-    <div class="header-search">
-      <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
-    </div>
   </div>
 </header>
 
@@ -77,6 +74,18 @@
   <p>Traditional aartis, chalisas, stotrams and mantras — with the original Devanagari, a gentle transliteration, the full meaning in English, and a voice to read them aloud.</p>
 </section>
 
+<section class="zone" id="zoneSadhana" aria-label="Sadhana - daily practice">
+  <header class="zone-head">
+    <h2 class="zone-title">साधना · Sadhana</h2>
+    <p class="zone-sub">Today's practice, your streak, and the day's tithi.</p>
+  </header>
+</section>
+
+<section class="zone" id="zonePrayers" aria-label="Prayers">
+  <header class="zone-head">
+    <h2 class="zone-title">प्रार्थना · Prayers</h2>
+    <p class="zone-sub">A verse for today, then the full library.</p>
+  </header>
 <button class="vod" id="verseOfDay" hidden aria-label="Open today's verse">
   <span class="vod-label">आज का पाठ · Verse of the day</span>
   <span class="vod-dev" id="vodDev"></span>
@@ -85,6 +94,10 @@
   <span class="vod-source" id="vodSource"></span>
 </button>
 
+<div class="prayers-tools">
+  <div class="header-search">
+    <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
+  </div>
 <div class="deity-filter" id="deityFilter">
   <button id="deityFilterBtn" class="deity-filter-btn" aria-haspopup="true" aria-expanded="false">
     <span class="df-label" id="deityFilterLabel">All deities</span>
@@ -93,7 +106,16 @@
   <div class="deity-menu" id="deityMenu" role="menu" hidden></div>
 </div>
 
+</div>
 <main id="prayerGrid" class="prayer-grid"></main>
+</section>
+
+<section class="zone" id="zonePractice" aria-label="Practice - journeys, quizzes and puzzles">
+  <header class="zone-head">
+    <h2 class="zone-title">अभ्यास · Practice</h2>
+    <p class="zone-sub">Guided journeys, quizzes, and the daily puzzle.</p>
+  </header>
+</section>
 </div>
 
 <section id="japaSection" class="japa-section" hidden>
@@ -252,21 +274,21 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=21"></script>
-<script src="data2.js?v=21"></script>
-<script src="data3.js?v=21"></script>
-<script src="festivals.js?v=21"></script>
-<script src="guides.js?v=21"></script>
-<script src="why.js?v=21"></script>
-<script src="app.js?v=21"></script>
-<script src="focus.js?v=21"></script>
-<script src="journeys.js?v=21"></script>
-<script src="sadhana.js?v=21"></script>
-<script src="quizzes.js?v=21"></script>
-<script src="almanac.js?v=21"></script>
-<script src="japa.js?v=21"></script>
-<script src="sections.js?v=21"></script>
-<script src="ambience.js?v=21"></script>
-<script src="backnav.js?v=21"></script>
+<script src="data.js?v=22"></script>
+<script src="data2.js?v=22"></script>
+<script src="data3.js?v=22"></script>
+<script src="festivals.js?v=22"></script>
+<script src="guides.js?v=22"></script>
+<script src="why.js?v=22"></script>
+<script src="app.js?v=22"></script>
+<script src="focus.js?v=22"></script>
+<script src="journeys.js?v=22"></script>
+<script src="sadhana.js?v=22"></script>
+<script src="quizzes.js?v=22"></script>
+<script src="almanac.js?v=22"></script>
+<script src="japa.js?v=22"></script>
+<script src="sections.js?v=22"></script>
+<script src="ambience.js?v=22"></script>
+<script src="backnav.js?v=22"></script>
 </body>
 </html>
