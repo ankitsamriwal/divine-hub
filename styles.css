@@ -1302,3 +1302,6 @@ body {
   cursor: pointer;
 }
 .jv-ep-mark:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+/* hidden attribute must win over display:flex overlays */
+.focus-view[hidden], .journey-view[hidden] { display: none; }
