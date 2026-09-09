@@ -336,6 +336,7 @@
   }
 
   function showCurrent() {
+    view.classList.add('sy-playing');
     var p = state.seq[state.ai];
     var total = state.seq.length;
     var body;
@@ -403,6 +404,7 @@
 
   /* ----- step 4: closing ----- */
   function renderEnd(early) {
+    view.classList.remove('sy-playing');
     state.step = 'end';
     stopTimer();
     if (!early) { soft(); setTimeout(soft, 1200); setTimeout(soft, 2400); }

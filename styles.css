@@ -2040,12 +2040,18 @@ body {
 .sy-chrome-r { color: var(--gold); }
 .sy-prog { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: rgba(226, 169, 78, 0.15); }
 .sy-prog span { display: block; height: 100%; background: var(--gold); transition: width 0.8s ease; }
+.sandhya-view.sy-playing { display: flex; flex-direction: column; }
 .sy-verse {
   animation: sy-fadein 1.2s ease;
   max-width: 640px;
   margin: 0 auto;
   padding: 0 1.2rem;
   text-align: center;
+}
+/* keep the verse clear of the fixed chrome bar and controls */
+.sandhya-view.sy-playing .sy-verse {
+  margin: auto;
+  padding: 4.2rem 1.2rem 7.5rem;
 }
 @keyframes sy-fadein { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: none; } }
 .sy-dev {
