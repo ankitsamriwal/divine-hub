@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script>try{if(sessionStorage.getItem('dh_intro_seen'))document.documentElement.classList.add('intro-skip')}catch(e){}</script>
+<script>try{if(!sessionStorage.getItem('dh_intro_seen')&&localStorage.getItem('divinehub_ambience_v1')!=='off'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('amb-intro')}catch(e){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Divine Hub — Aartis, Stotrams & Mantras</title>
@@ -26,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=22">
+<link rel="stylesheet" href="styles.css?v=23">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -274,21 +275,21 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=22"></script>
-<script src="data2.js?v=22"></script>
-<script src="data3.js?v=22"></script>
-<script src="festivals.js?v=22"></script>
-<script src="guides.js?v=22"></script>
-<script src="why.js?v=22"></script>
-<script src="app.js?v=22"></script>
-<script src="focus.js?v=22"></script>
-<script src="journeys.js?v=22"></script>
-<script src="sadhana.js?v=22"></script>
-<script src="quizzes.js?v=22"></script>
-<script src="almanac.js?v=22"></script>
-<script src="japa.js?v=22"></script>
-<script src="sections.js?v=22"></script>
-<script src="ambience.js?v=22"></script>
-<script src="backnav.js?v=22"></script>
+<script src="data.js?v=23"></script>
+<script src="data2.js?v=23"></script>
+<script src="data3.js?v=23"></script>
+<script src="festivals.js?v=23"></script>
+<script src="guides.js?v=23"></script>
+<script src="why.js?v=23"></script>
+<script src="app.js?v=23"></script>
+<script src="focus.js?v=23"></script>
+<script src="journeys.js?v=23"></script>
+<script src="sadhana.js?v=23"></script>
+<script src="quizzes.js?v=23"></script>
+<script src="almanac.js?v=23"></script>
+<script src="japa.js?v=23"></script>
+<script src="sections.js?v=23"></script>
+<script src="ambience.js?v=23"></script>
+<script src="backnav.js?v=23"></script>
 </body>
 </html>

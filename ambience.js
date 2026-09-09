@@ -185,7 +185,8 @@
   }
 
   /* =============== INCENSE VAPOR =============== */
-  var cv = null, cx = null, parts = [], raf = null, lastSpawn = 0;
+  var cv = null, cx = null, parts = [], raf = null, lastSpawn = 0, introUntil = 0;
+  var introArmed = document.documentElement.classList.contains('amb-intro');
 
   function smokeSetup() {
     cv = document.createElement('canvas');
@@ -204,26 +205,29 @@
     cv.style.width = innerWidth + 'px';
     cv.style.height = innerHeight + 'px';
   }
-  function spawnPuff(now) {
+  function spawnPuff(now, burst) {
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var baseX = innerWidth * (0.5 + (Math.random() * 0.14 - 0.07)); // near center-bottom, like incense by the deity
     parts.push({
       x: baseX * dpr,
       y: (innerHeight + 8) * dpr,
-      r: (3 + Math.random() * 4) * dpr,
+      r: (3 + Math.random() * 4) * (burst ? 1.45 : 1) * dpr,
       vy: (9 + Math.random() * 8) * dpr / 60,
       drift: Math.random() * Math.PI * 2,
       driftSpd: 0.35 + Math.random() * 0.5,
       born: now,
+      peak: burst ? 0.30 : 0.16,
       life: 8000 + Math.random() * 5000
     });
-    if (parts.length > 26) parts.shift();
+    if (parts.length > (burst ? 44 : 30)) parts.shift();
   }
   function frame(now) {
     raf = null;
     if (!on || reduced || document.hidden) { stopSmoke(true); return; }
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    if (now - lastSpawn > 700 + Math.random() * 500) { spawnPuff(now); lastSpawn = now; }
+    var burst = introArmed && now < introUntil;
+    var gap = burst ? 130 + Math.random() * 110 : 380 + Math.random() * 260;
+    if (now - lastSpawn > gap) { spawnPuff(now, burst); lastSpawn = now; }
     cx.clearRect(0, 0, cv.width, cv.height);
     for (var i = parts.length - 1; i >= 0; i--) {
       var p = parts[i];
@@ -235,7 +239,7 @@
       p.r += 0.028 * dpr * 16;
       // fade in fast, linger, dissipate slow
       var a = t < 0.12 ? t / 0.12 : 1 - (t - 0.12) / 0.88;
-      a *= 0.10; // whisper-subtle
+      a *= p.peak; // present but gentle; thicker during the opening burst
       var g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
       g.addColorStop(0, 'rgba(232,214,186,' + a.toFixed(3) + ')');
       g.addColorStop(0.55, 'rgba(214,192,164,' + (a * 0.55).toFixed(3) + ')');
@@ -250,6 +254,7 @@
   function startSmoke() {
     if (!on || reduced) return;
     if (!cv) smokeSetup();
+    if (introArmed && !introUntil) introUntil = performance.now() + 2800; // thick opening vapor, then it thins
     if (!raf) raf = requestAnimationFrame(frame);
   }
   function stopSmoke(clear) {
@@ -267,8 +272,10 @@
       armGesture();
       petalsStart();
       startSmoke();
+      runIntroSequence();
       if (actx) { actx.resume().catch(function () {}); scheduleSparse(); }
     } else {
+      document.documentElement.classList.remove('amb-intro', 'amb-text-in');
       clearTimeout(bellTimer);
       window.removeEventListener('pointerdown', onGesture);
       window.removeEventListener('keydown', onGesture);
@@ -281,6 +288,22 @@
       b.textContent = on ? '🪔 Temple ambience: on' : '🪔 Temple ambience: off';
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
+  }
+
+  /* ---------- landing text sequence: vapor first, text fades in as it thins ---------- */
+  function runIntroSequence() {
+    if (!introArmed) return;
+    setTimeout(function () {
+      document.documentElement.classList.add('amb-text-in');
+      setTimeout(function () {
+        document.documentElement.classList.remove('amb-intro');
+        document.documentElement.classList.remove('amb-text-in');
+      }, 2600);
+    }, 1500);
+  }
+  if (!on || reduced) {
+    document.documentElement.classList.remove('amb-intro');
+    introArmed = false;
   }
 
   function mountToggle() {
