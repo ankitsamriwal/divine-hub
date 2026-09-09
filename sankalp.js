@@ -381,7 +381,7 @@
     });
   }
 
-  window.dhSankalp = { open: openSheet, renderHome: renderHome };
+  window.dhSankalp = { open: openSheet, renderHome: renderHome, card: function () { const s = load(); return s ? drawShareCard(s, doneCount(s), streakOf(s), isComplete(s)) : null; } };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => { renderHome(); wireFab(); });
