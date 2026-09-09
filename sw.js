@@ -7,6 +7,7 @@ const CORE = [
   './app.js?v=12',
   './data.js?v=12',
   './data2.js?v=12',
+  './data3.js?v=12',
   './festivals.js?v=12',
   './guides.js?v=12',
   './why.js?v=12',
