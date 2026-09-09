@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=25">
+<link rel="stylesheet" href="styles.css?v=26">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -80,6 +80,9 @@
     <h2 class="zone-title">साधना · Sadhana</h2>
     <p class="zone-sub">Today's practice, your streak, and the day's tithi.</p>
   </header>
+  <section class="sandhya-section" id="sandhyaSection" aria-label="Sandhya Aarti - evening aarti">
+    <div class="sy-card" id="syCard"></div>
+  </section>
 </section>
 
 <section class="zone" id="zonePrayers" aria-label="Prayers">
@@ -290,21 +293,22 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=25"></script>
-<script src="data2.js?v=25"></script>
-<script src="data3.js?v=25"></script>
-<script src="festivals.js?v=25"></script>
-<script src="guides.js?v=25"></script>
-<script src="why.js?v=25"></script>
-<script src="app.js?v=25"></script>
-<script src="focus.js?v=25"></script>
-<script src="journeys.js?v=25"></script>
-<script src="sadhana.js?v=25"></script>
-<script src="quizzes.js?v=25"></script>
-<script src="almanac.js?v=25"></script>
-<script src="japa.js?v=25"></script>
-<script src="sections.js?v=25"></script>
-<script src="ambience.js?v=25"></script>
-<script src="backnav.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="data2.js?v=26"></script>
+<script src="data3.js?v=26"></script>
+<script src="festivals.js?v=26"></script>
+<script src="guides.js?v=26"></script>
+<script src="why.js?v=26"></script>
+<script src="app.js?v=26"></script>
+<script src="focus.js?v=26"></script>
+<script src="journeys.js?v=26"></script>
+<script src="sadhana.js?v=26"></script>
+<script src="quizzes.js?v=26"></script>
+<script src="almanac.js?v=26"></script>
+<script src="sandhya.js?v=26"></script>
+<script src="japa.js?v=26"></script>
+<script src="sections.js?v=26"></script>
+<script src="ambience.js?v=26"></script>
+<script src="backnav.js?v=26"></script>
 </body>
 </html>
