@@ -2108,3 +2108,70 @@ body {
 }
 @keyframes sy-flicker { 0%, 100% { transform: scaleY(1) rotate(-1.5deg); } 50% { transform: scaleY(1.08) rotate(1.5deg); } }
 .sy-shanti { font-family: var(--font-dev); color: var(--gold); font-size: 1.15rem; margin: 1.1rem 0 0.9rem; }
+
+/* ---------- sheet overlays (japa, guides, nearby) ---------- */
+.dh-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: radial-gradient(ellipse 90% 70% at 50% 110%, #241610, var(--ink) 70%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4.2rem 1.2rem 6rem;
+}
+.dh-sheet[hidden] { display: none; }
+.dh-sheet-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 85;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--gold-dim);
+  background: rgba(20, 15, 11, 0.72);
+  color: var(--cream);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* ---------- floating action buttons + menu ---------- */
+.japa-fab { bottom: 6.9rem; }
+.fab-menu {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 6.9rem;
+  z-index: 90;
+  background: var(--ink-2);
+  border: 1px solid var(--gold-dim);
+  border-radius: 16px;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 210px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+.fab-menu[hidden] { display: none; }
+.fab-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: 1.02rem;
+  padding: 0.75rem 0.9rem;
+  min-height: 52px;
+  border-radius: 11px;
+  cursor: pointer;
+  text-align: left;
+}
+.fab-menu-item:active, .fab-menu-item:hover { background: var(--ink-3); }
+.fmi-ic { font-size: 1.2rem; }
+
+@media (max-width: 654px) {
+  .japa-fab { bottom: 6.3rem; }
+  .fab-menu { right: 1rem; bottom: 6.3rem; }
+}

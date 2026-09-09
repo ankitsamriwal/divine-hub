@@ -3,46 +3,26 @@
 (function () {
   'use strict';
 
-  const VIEWS = ['prayers', 'japa', 'festivals', 'guides', 'why', 'nearby'];
-  const TAB = {
-    prayers: 'tabPrayers', japa: 'tabJapa', festivals: 'tabFestivals',
-    guides: 'tabGuides', why: 'tabWhy', nearby: 'tabNearby'
+  /* ---------- sheet overlays (japa, guides, nearby) ---------- */
+  window.dhOpenSheet = function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = false;
+    document.body.style.overflow = 'hidden';
+    el.scrollTop = 0;
+    if (id === 'japaSection' && typeof window.dhDrawMala === 'function') window.dhDrawMala();
   };
-  const SECTION = {
-    prayers: 'prayerSection', japa: 'japaSection', festivals: 'festivalsSection',
-    guides: 'guidesSection', why: 'whySection', nearby: 'nearbySection'
+  window.dhCloseSheet = function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = true;
+    if (!document.querySelector('.dh-sheet:not([hidden])')) document.body.style.overflow = '';
   };
-
-  const headerSearch = document.querySelector('.header-search');
-
-  function show(which) {
-    VIEWS.forEach(v => {
-      const t = document.getElementById(TAB[v]);
-      const sec = document.getElementById(SECTION[v]);
-      if (t) t.classList.toggle('active', v === which);
-      if (sec) sec.hidden = v !== which;
+  [['guidesClose', 'guidesSection'], ['nearbyClose', 'nearbySection'], ['japaClose', 'japaSection']]
+    .forEach(function (pair) {
+      var b = document.getElementById(pair[0]);
+      if (b) b.addEventListener('click', function () { window.dhCloseSheet(pair[1]); });
     });
-    if (headerSearch) headerSearch.style.visibility = which === 'prayers' ? '' : 'hidden';
-    window.scrollTo(0, 0);
-    try { history.replaceState(null, '', which === 'prayers' ? location.pathname : '#' + which); } catch (e) {}
-    if (which === 'japa' && typeof drawMalaGlobal === 'function') drawMalaGlobal();
-  }
-
-  // japa.js owns prayers/japa clicks; we add ours and also listen on those two
-  // to hide the new sections when the user goes back.
-  ['festivals', 'guides', 'why', 'nearby'].forEach(v => {
-    document.getElementById(TAB[v]).addEventListener('click', () => show(v));
-  });
-  ['prayers', 'japa'].forEach(v => {
-    document.getElementById(TAB[v]).addEventListener('click', () => {
-      ['festivals', 'guides', 'why', 'nearby'].forEach(x => {
-        document.getElementById(TAB[x]).classList.remove('active');
-        document.getElementById(SECTION[x]).hidden = true;
-      });
-      if (headerSearch) headerSearch.style.visibility = v === 'prayers' ? '' : 'hidden';
-      try { history.replaceState(null, '', v === 'prayers' ? location.pathname : '#' + v); } catch (e) {}
-    });
-  });
 
   /* ---------- Festivals ---------- */
   const up = festivalsUpcoming(new Date());
@@ -123,15 +103,25 @@
     const h = (location.hash || '').replace(/^#/, '');
     if (!h) return;
     if (h.indexOf('prayer-') === 0 && typeof window.dhOpenPrayer === 'function') {
-      show('prayers');
-      document.getElementById(TAB.prayers).click();
       window.dhOpenPrayer(h.slice(7));
       /* consume the deep link so navigating back to this entry cannot reopen the view */
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       return;
     }
-    if (VIEWS.indexOf(h) !== -1) {
-      document.getElementById(TAB[h]).click();
+    if (h === 'japa') { window.dhOpenSheet('japaSection'); return; }
+    if (h === 'guides') { window.dhOpenSheet('guidesSection'); return; }
+    if (h === 'nearby') { window.dhOpenSheet('nearbySection'); return; }
+    if (h === 'festivals') {
+      const f = document.getElementById('festivalsSection');
+      if (f) f.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (h === 'why') {
+      const t = document.getElementById('whyToggle');
+      const w = document.getElementById('whyWrap');
+      if (t && w && w.hidden) t.click();
+      if (t) t.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
   }
   window.addEventListener('hashchange', routeHash);

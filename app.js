@@ -459,14 +459,30 @@
   const input = document.getElementById('chatInput');
   let chatOpened = false;
 
-  fab.addEventListener('click', () => {
-    panel.hidden = !panel.hidden;
-    if (!panel.hidden && !chatOpened) {
+  /* folded-hands FAB now opens a small menu; the chat is one item in it */
+  const fabMenu = document.getElementById('fabMenu');
+  function closeFabMenu() { if (fabMenu) fabMenu.hidden = true; }
+  function openChat() {
+    closeFabMenu();
+    panel.hidden = false;
+    if (!chatOpened) {
       chatOpened = true;
       botSay('नमस्ते 🙏 I am the Divine Guide. Ask me about any prayer here — its meaning, its deity, when it is sung — or about the deities themselves.');
       renderChips(CHAT_SUGGESTIONS);
     }
-    if (!panel.hidden) input.focus();
+    input.focus();
+  }
+  fab.addEventListener('click', () => {
+    if (fabMenu) { fabMenu.hidden = !fabMenu.hidden; return; }
+    openChat();
+  });
+  document.getElementById('fabChat').addEventListener('click', openChat);
+  document.getElementById('fabGuides').addEventListener('click', () => { closeFabMenu(); window.dhOpenSheet('guidesSection'); });
+  document.getElementById('fabNearby').addEventListener('click', () => { closeFabMenu(); window.dhOpenSheet('nearbySection'); });
+  const japaFab = document.getElementById('japaFab');
+  if (japaFab) japaFab.addEventListener('click', () => window.dhOpenSheet('japaSection'));
+  document.addEventListener('click', (e) => {
+    if (fabMenu && !fabMenu.hidden && !fabMenu.contains(e.target) && e.target !== fab && !fab.contains(e.target)) closeFabMenu();
   });
   chatClose.addEventListener('click', () => { panel.hidden = true; });
 

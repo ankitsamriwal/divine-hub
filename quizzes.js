@@ -45,8 +45,27 @@
     ]
   };
 
-  // Daily puzzle pool: guess the deity from a stanza meaning.
+  // Daily puzzle alternates: guess the deity from a stanza meaning one day,
+  // a "why is this used in puja?" question from the Why section the next.
+  function whyPuzzle(dayIndex) {
+    const items = [];
+    WHY_CATEGORIES.forEach(c => c.items.forEach(it => { if (it.role) items.push({ it: it, cat: c.title }); }));
+    const pick = items[(dayIndex * 5 + 1) % items.length];
+    const wrong = items.filter(x => x.it.item !== pick.it.item);
+    const opts = [];
+    let seed = dayIndex;
+    while (opts.length < 2 && wrong.length) {
+      const i = (seed * 31 + 17) % wrong.length;
+      opts.push(wrong.splice(i, 1)[0].it.item);
+      seed++;
+    }
+    const options = [pick.it.item, ...opts].sort(() => ((dayIndex % 3) - 1));
+    return { kind: 'why', pick: pick, options: options, answer: pick.it.item };
+  }
+
   function dailyPuzzle() {
+    const dayIndex0 = Math.floor(Date.now() / 86400000);
+    if (dayIndex0 % 2 === 1 && typeof WHY_CATEGORIES !== 'undefined') return whyPuzzle(dayIndex0);
     const pool = [];
     PRAYERS.forEach(p => p.stanzas.forEach((s, si) => {
       if (s.meaning && s.meaning.length > 60) pool.push({ p: p, s: s, si: si });
@@ -160,8 +179,8 @@
       '<div class="qz-panel"><div class="qz-result">' +
       '<div class="qz-om">🧩</div>' +
       '<div class="qz-verdict">Today\'s puzzle is done' + (wasRight ? ' — and you had it right.' : '.') + '</div>' +
-      '<div class="qz-q" style="margin-top:1rem">' + pz.pick.s.meaning + '</div>' +
-      '<div class="qz-src">' + pz.pick.p.title + ' · ' + pz.pick.p.deity + '</div>' +
+      '<div class="qz-q" style="margin-top:1rem">' + (pz.kind === 'why' ? pz.pick.it.role : pz.pick.s.meaning) + '</div>' +
+      '<div class="qz-src">' + (pz.kind === 'why' ? pz.pick.it.item + ' · ' + pz.pick.cat : pz.pick.p.title + ' · ' + pz.pick.p.deity) + '</div>' +
       '<button class="pv-action" id="qzDone" style="margin-top:1rem">Done</button></div></div>';
     overlay.querySelector('#qzDone').addEventListener('click', close);
     overlay.hidden = false;
@@ -173,8 +192,8 @@
     overlay.innerHTML =
       '<div class="qz-panel">' +
       '<div class="qz-top"><span class="qz-title">🧩 Daily puzzle</span><span class="qz-count">' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</span></div>' +
-      '<div class="qz-hint">Whose words are these?</div>' +
-      '<div class="qz-q">' + pz.pick.s.meaning + '</div>' +
+      '<div class="qz-hint">' + (pz.kind === 'why' ? 'Which puja item is this?' : 'Whose words are these?') + '</div>' +
+      '<div class="qz-q">' + (pz.kind === 'why' ? pz.pick.it.role : pz.pick.s.meaning) + '</div>' +
       '<div class="qz-opts">' + pz.options.map(o =>
         '<button class="qz-opt" data-d="' + o + '">' + o + '</button>').join('') + '</div>' +
       '<div class="qz-fb" id="qzFb"></div></div>';
@@ -190,8 +209,11 @@
           else if (x === b) x.classList.add('wrong');
         });
         const fb = overlay.querySelector('#qzFb');
+        const fbWhy = pz.kind === 'why'
+          ? (right ? 'Right.' : 'It was ' + pz.answer + '.') + ' ' + pz.pick.it.traditional
+          : (right ? 'Right — from ' + pz.pick.p.title + '.' : 'It was ' + pz.answer + ' — from ' + pz.pick.p.title + '.');
         fb.innerHTML = '<div class="qz-fb-t ' + (right ? 'ok' : 'no') + '">' +
-          (right ? 'Right — from ' + pz.pick.p.title + '.' : 'It was ' + pz.answer + ' — from ' + pz.pick.p.title + '.') + '</div>' +
+          fbWhy + '</div>' +
           '<button class="pv-action" id="qzNext">Done</button>';
         fb.querySelector('#qzNext').addEventListener('click', () => { close(); renderPuzzleCard(); });
       }));

@@ -3,22 +3,8 @@
 (function () {
   'use strict';
 
-  /* ---------- view switching ---------- */
-  const tabPrayers = document.getElementById('tabPrayers');
-  const tabJapa = document.getElementById('tabJapa');
-  const prayerSection = document.getElementById('prayerSection');
-  const japaSection = document.getElementById('japaSection');
-
-  function showView(which) {
-    tabPrayers.classList.toggle('active', which === 'prayers');
-    tabJapa.classList.toggle('active', which === 'japa');
-    prayerSection.hidden = which !== 'prayers';
-    japaSection.hidden = which !== 'japa';
-    window.scrollTo(0, 0);
-    if (which === 'japa') drawMala();
-  }
-  tabPrayers.addEventListener('click', () => showView('prayers'));
-  tabJapa.addEventListener('click', () => showView('japa'));
+  /* ---------- overlay open/close (japa lives in a sheet now) ---------- */
+  window.dhDrawMala = function () { drawMala(); };
 
   /* ---------- state ---------- */
   const LS_KEY = 'divinehub_japa_v1';

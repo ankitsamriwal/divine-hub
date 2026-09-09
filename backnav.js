@@ -13,9 +13,14 @@
     focusView: function () { return clickById('fvClose'); },
     journeyView: function () { return clickById('jvClose') || backdrop('journeyView'); },
     quizView: function () { return backdrop('quizView'); },
-    diyaCelebration: function () { return clickById('dcClose'); }
+    diyaCelebration: function () { return clickById('dcClose'); },
+    japaSection: function () { return clickById('japaClose'); },
+    guidesSection: function () { return clickById('guidesClose'); },
+    nearbySection: function () { return clickById('nearbyClose'); },
+    sandhyaView: function () { return clickById('syvX') || clickById('syExit'); },
+    fabMenu: function () { var m = document.getElementById('fabMenu'); if (m) { m.hidden = true; return true; } return false; }
   };
-  var SECTION_IDS = ['prayerSection', 'japaSection', 'festivalsSection', 'guidesSection', 'whySection', 'nearbySection'];
+  var SECTION_IDS = ['prayerSection'];
   var SECTION_TABS = {
     prayerSection: 'tabPrayers', japaSection: 'tabJapa', festivalsSection: 'tabFestivals',
     guidesSection: 'tabGuides', whySection: 'tabWhy', nearbySection: 'tabNearby'

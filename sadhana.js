@@ -155,8 +155,7 @@
       const vod = document.getElementById('verseOfDay');
       if (vod && !vod.hidden) vod.click();
     } else if (key === 'japa') {
-      const tab = document.getElementById('tabJapa');
-      if (tab) tab.click();
+      if (window.dhOpenSheet) window.dhOpenSheet('japaSection');
     } else if (key === 'prayer') {
       const card = document.querySelector('.prayer-grid .prayer-card, .prayer-grid article, .prayer-grid button');
       if (card) card.click();
