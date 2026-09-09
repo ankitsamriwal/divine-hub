@@ -75,17 +75,21 @@
   function ambOn() {
     try { return localStorage.getItem('divinehub_ambience_v1') !== 'off'; } catch (e) { return true; }
   }
-  function ensureAudio() {
-    if (!ambOn()) return;
+  function ensureActx() {
     if (!actx) {
       var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
+      if (!AC) return false;
       actx = new AC();
       gain = actx.createGain();
       gain.gain.value = 0.5;
       gain.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume().catch(function () {});
+    return true;
+  }
+  function ensureAudio() {
+    if (!ambOn()) return;
+    if (!ensureActx()) return;
     if (!buf && !loading) {
       loading = true;
       fetch('assets/bells.mp3')
@@ -114,11 +118,34 @@
   function peal() { strike(PEAL[0], PEAL[1], 1); }
   function soft() { strike(STRIKE[0], STRIKE[1], 0.65); }
 
-  /* ---------- vocal recordings: main audio for aartis that have one ---------- */
-  var vocal = null, vocalUrl = null;
+  /* ---------- vocal recordings: main audio for aartis that have one ----------
+     Played through the same WebAudio context as the bells - the Enter tap
+     unlocks it, so the recording may start minutes later without an autoplay
+     block. Pause/resume emulate with offset tracking. */
+  var vocalBufs = {};
+  var vocalSrc = null, vocalUrl = null, vocalOffset = 0, vocalStartedAt = 0;
   function stopVocal() {
-    if (vocal) { try { vocal.pause(); } catch (e) {} vocal = null; }
-    vocalUrl = null;
+    if (vocalSrc) { try { vocalSrc.stop(); } catch (e) {} vocalSrc = null; }
+    vocalUrl = null; vocalOffset = 0;
+  }
+  function pauseVocal() {
+    if (!vocalSrc || !actx) return;
+    vocalOffset += actx.currentTime - vocalStartedAt;
+    try { vocalSrc.stop(); } catch (e) {}
+    vocalSrc = null;
+  }
+  function resumeVocal() {
+    if (!vocalUrl || vocalSrc || !actx) return;
+    var b = vocalBufs[vocalUrl];
+    if (!b || vocalOffset >= b.duration) return;
+    var src = actx.createBufferSource();
+    src.buffer = b;
+    var g = actx.createGain();
+    g.gain.value = 0.95;
+    src.connect(g); g.connect(actx.destination);
+    src.start(0, vocalOffset);
+    vocalSrc = src;
+    vocalStartedAt = actx.currentTime;
   }
   function syncVocal() {
     var p = state.seq[state.ai];
@@ -127,18 +154,26 @@
     stopVocal();
     state.stanzaMs = null;
     if (!url) return;
-    vocalUrl = url;
-    vocal = new Audio(url);
-    vocal.volume = 0.92;
-    vocal.addEventListener('loadedmetadata', function () {
-      if (!vocal || vocalUrl !== url) return;
-      var cur = state.seq[state.ai];
-      if (!cur || CFG.audio[cur.id] !== url) return;
-      /* pace the lyric scroll to the recording: full length minus the title
-         card and a short tail, spread over the stanzas */
-      state.stanzaMs = Math.max(15000, Math.round((vocal.duration * 1000 - CFG.titleMs - 4000) / cur.stanzas.length));
-    });
-    if (!state.paused) vocal.play().catch(function () {});
+    vocalUrl = url; vocalOffset = 0;
+    if (!vocalBufs[url]) {
+      if (!ensureActx()) return;
+      fetch(url)
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (ab) { return actx.decodeAudioData(ab); })
+        .then(function (b) {
+          vocalBufs[url] = b;
+          var cur = state.seq[state.ai];
+          if (cur && CFG.audio[cur.id] === url) {
+            /* pace the lyric scroll to the recording: full length minus the
+               title card and a short tail, spread over the stanzas */
+            state.stanzaMs = Math.max(15000, Math.round((b.duration * 1000 - CFG.titleMs - 4000) / cur.stanzas.length));
+          }
+          if (vocalUrl === url && !state.paused) resumeVocal();
+        })
+        .catch(function () {});
+    } else if (!state.paused) {
+      resumeVocal();
+    }
   }
 
   /* ---------- gate card ---------- */
@@ -179,6 +214,7 @@
   }
 
   function openFlow(preview) {
+    ensureActx(); // unlock audio inside the tap, even with ambience off
     ensureAudio();
     state = { preview: preview, step: 'doors' };
     renderDoors();
@@ -312,8 +348,8 @@
   function wireControls() {
     view.querySelector('#syPause').addEventListener('click', function () {
       state.paused = !state.paused;
-      if (state.paused) { stopTimer(); if (vocal) vocal.pause(); }
-      else if (vocal) vocal.play().catch(function () {});
+      if (state.paused) { stopTimer(); pauseVocal(); }
+      else resumeVocal();
       showCurrent();
     });
     view.querySelector('#syNext').addEventListener('click', function () { advance(true); });
