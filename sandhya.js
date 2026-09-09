@@ -16,7 +16,12 @@
     minAmount: 21,
     stanzaMs: 33000,         // sung pace: ~33s per stanza
     titleMs: 8000,           // aarti title card
-    set: ['jai-ganesh-deva', 'om-jai-jagdish-hare', 'hanuman-aarti']
+    set: ['jai-ganesh-deva', 'om-jai-jagdish-hare', 'hanuman-aarti'],
+    /* Vocal recordings per aarti id. Modular: to add one, drop the mp3 in
+       assets/ and add a line here - no other changes. Sources in assets/LICENSES.md. */
+    audio: {
+      'hanuman-aarti': 'assets/hanuman-aarti.mp3'
+    }
   };
   /* DORMANT by user decision (Sep 2026): no donations on the site - Indian tax
      treatment of donations to an individual is unclear. This payment seam and the
@@ -109,6 +114,33 @@
   function peal() { strike(PEAL[0], PEAL[1], 1); }
   function soft() { strike(STRIKE[0], STRIKE[1], 0.65); }
 
+  /* ---------- vocal recordings: main audio for aartis that have one ---------- */
+  var vocal = null, vocalUrl = null;
+  function stopVocal() {
+    if (vocal) { try { vocal.pause(); } catch (e) {} vocal = null; }
+    vocalUrl = null;
+  }
+  function syncVocal() {
+    var p = state.seq[state.ai];
+    var url = p ? (CFG.audio[p.id] || null) : null;
+    if (url === vocalUrl) return;
+    stopVocal();
+    state.stanzaMs = null;
+    if (!url) return;
+    vocalUrl = url;
+    vocal = new Audio(url);
+    vocal.volume = 0.92;
+    vocal.addEventListener('loadedmetadata', function () {
+      if (!vocal || vocalUrl !== url) return;
+      var cur = state.seq[state.ai];
+      if (!cur || CFG.audio[cur.id] !== url) return;
+      /* pace the lyric scroll to the recording: full length minus the title
+         card and a short tail, spread over the stanzas */
+      state.stanzaMs = Math.max(15000, Math.round((vocal.duration * 1000 - CFG.titleMs - 4000) / cur.stanzas.length));
+    });
+    if (!state.paused) vocal.play().catch(function () {});
+  }
+
   /* ---------- gate card ---------- */
   var cardTimer = null;
   function renderGate() {
@@ -155,6 +187,7 @@
   }
   function closeFlow() {
     stopTimer();
+    stopVocal();
     view.hidden = true;
     document.body.style.overflow = '';
     renderGate();
@@ -220,15 +253,16 @@
       state.ai++;
       state.si = -1;
       if (state.ai >= state.seq.length) { renderEnd(); return; }
-      peal();
+      if (!CFG.audio[state.seq[state.ai].id]) peal(); // recorded aartis carry their own opening
     } else if (state.si > 0) {
-      soft(); // a gentle strike with each verse, like the temple bell keeper
+      strike(STRIKE[0], STRIKE[1], vocalUrl ? 0.22 : 0.65); // bells stay soft under the singing
     }
     showCurrent();
   }
 
   function showCurrent() {
     view.classList.add('sy-playing');
+    syncVocal();
     var p = state.seq[state.ai];
     var total = state.seq.length;
     var body;
@@ -250,7 +284,7 @@
         '<div class="sy-meaning">' + st.meaning + '</div>' +
         '</div>';
       view.innerHTML = chrome(p) + body + controls();
-      if (!state.paused) scheduleNext(CFG.stanzaMs);
+      if (!state.paused) scheduleNext(state.stanzaMs || CFG.stanzaMs);
     }
     wireControls();
   }
@@ -278,7 +312,8 @@
   function wireControls() {
     view.querySelector('#syPause').addEventListener('click', function () {
       state.paused = !state.paused;
-      if (state.paused) stopTimer();
+      if (state.paused) { stopTimer(); if (vocal) vocal.pause(); }
+      else if (vocal) vocal.play().catch(function () {});
       showCurrent();
     });
     view.querySelector('#syNext').addEventListener('click', function () { advance(true); });
@@ -299,6 +334,7 @@
     view.classList.remove('sy-playing');
     state.step = 'end';
     stopTimer();
+    stopVocal();
     if (!early) { soft(); setTimeout(soft, 1200); setTimeout(soft, 2400); }
     view.innerHTML =
       '<div class="syv-inner sy-end">' +
