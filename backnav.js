@@ -15,6 +15,7 @@
     quizView: function () { return backdrop('quizView'); },
     diyaCelebration: function () { return clickById('dcClose'); },
     japaSection: function () { return clickById('japaClose'); },
+    sankalpSheet: function () { return clickById('sankalpClose'); },
     guidesSection: function () { return clickById('guidesClose'); },
     nearbySection: function () { return clickById('nearbyClose'); },
     sandhyaView: function () { return clickById('syvX') || clickById('syExit'); },
