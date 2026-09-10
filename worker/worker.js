@@ -16,6 +16,60 @@ const RATE_WINDOW_MS = 3600000; // per hour, per IP, per isolate (best effort)
 
 const buckets = new Map(); // ip -> {start, count}
 
+/* ---- Aaj Kya Khau grocery push: cron trigger + Web Push (VAPID) + KV ---- */
+// KHAU_KV binding + VAPID_JWK secret + VAPID_PUB var are provisioned by deploy-worker.yml.
+const PUSH_KEY = '1OI7dIZ5gi9od8fMsp6xBeMo16iYSfS2';
+function b64urlBytes(buf){let s='';const b=new Uint8Array(buf);for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64urlStr(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function vapidJwt(endpoint, env){
+  const aud = new URL(endpoint).origin;
+  const header = b64urlStr(JSON.stringify({typ:'JWT',alg:'ES256'}));
+  const claims = b64urlStr(JSON.stringify({aud:aud, exp: Math.floor(Date.now()/1000)+43200, sub:'mailto:ankitsamriwal@gmail.com'}));
+  const input = header+'.'+claims;
+  const jwk = JSON.parse(env.VAPID_JWK);
+  const key = await crypto.subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, key, new TextEncoder().encode(input));
+  return input+'.'+b64urlBytes(sig);
+}
+async function sendGroceryPush(env){
+  if(!env.KHAU_KV || !env.VAPID_JWK || !env.VAPID_PUB) return {skipped:'missing_env'};
+  const [sub, list] = await Promise.all([env.KHAU_KV.get('subscription','json'), env.KHAU_KV.get('list','json')]);
+  if(!sub || !sub.endpoint) return {skipped:'no_subscription'};
+  const jwt = await vapidJwt(sub.endpoint, env);
+  const res = await fetch(sub.endpoint, {method:'POST', headers:{'Authorization':'vapid t='+jwt+', k='+env.VAPID_PUB, 'TTL':'86400'}});
+  if(res.status===404 || res.status===410) await env.KHAU_KV.delete('subscription'); // stale sub
+  return {status:res.status, date:(list&&list.date)||null, meals:(list&&list.meals)||null, items:(list&&list.items&&list.items.length)||0};
+}
+function pushKeyOk(request){ return request.headers.get('x-push-key') === PUSH_KEY; }
+async function handlePushRoute(request, env, url, headers){
+  const json = (o, st) => new Response(JSON.stringify(o), { status: st||200, headers: { ...headers, 'Content-Type': 'application/json' } });
+  if(url.pathname === '/subscribe' && request.method === 'POST'){
+    if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
+    let sub; try{ sub = await request.json(); }catch{ return json({error:'bad_json'}, 400); }
+    if(!sub || !sub.endpoint || !sub.keys) return json({error:'bad_subscription'}, 400);
+    await env.KHAU_KV.put('subscription', JSON.stringify(sub));
+    return json({ok:true});
+  }
+  if(url.pathname === '/sync' && request.method === 'POST'){
+    if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
+    let d; try{ d = await request.json(); }catch{ return json({error:'bad_json'}, 400); }
+    const meals = Array.isArray(d.meals) ? d.meals.map(String).slice(0,4) : [];
+    const items = Array.isArray(d.items) ? d.items.map(String).slice(0,60) : [];
+    await env.KHAU_KV.put('list', JSON.stringify({date:String(d.date||''), meals, items, savedAt:Date.now()}));
+    return json({ok:true, meals:meals.length, items:items.length});
+  }
+  if(url.pathname === '/push-data' && request.method === 'GET'){
+    if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
+    const list = await env.KHAU_KV.get('list', 'json');
+    return json(list || {meals:[], items:[]});
+  }
+  if(url.pathname === '/debug-push' && request.method === 'GET'){
+    if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
+    return json(await sendGroceryPush(env));
+  }
+  return null;
+}
+
 function rateOk(ip) {
   const now = Date.now();
   let b = buckets.get(ip);
@@ -29,8 +83,8 @@ function corsHeaders(origin) {
   const ok = ALLOWED_ORIGINS.has(origin);
   return {
     'Access-Control-Allow-Origin': ok ? origin : 'null',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, x-push-key',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
@@ -44,6 +98,9 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
 
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/subscribe') || url.pathname.startsWith('/sync') || url.pathname.startsWith('/push-data') || url.pathname.startsWith('/debug-push')) {
+      try { const r = await handlePushRoute(request, env, url, headers); if (r) return r; } catch (e) { return new Response(JSON.stringify({ error: 'push_route_error', detail: String(e && e.message || e).slice(0, 200) }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }); }
+    }
     if (url.pathname !== '/chat' || request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'not_found' }), { status: 404, headers: { ...headers, 'Content-Type': 'application/json' } });
     }
@@ -119,5 +176,9 @@ export default {
       } else { available = ['list_failed_' + lr.status]; }
     } catch (e) { available = ['list_error']; }
     return new Response(JSON.stringify({ error: lastErr, attempts: attempts, available_models: available }), { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } });
+  },
+  // 04:00 UTC = 08:00 Asia/Dubai: push tomorrow's meals + grocery list
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendGroceryPush(env));
   }
 };

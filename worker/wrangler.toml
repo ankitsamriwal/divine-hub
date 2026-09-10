@@ -5,3 +5,13 @@ workers_dev = true
 
 [placement]
 mode = "smart"
+
+[vars]
+VAPID_PUB = "BCa0v0XHzyuBbO3chPPsiDu7htwIIi8K3H_1sFt7v5iiWKAChxVxAZ25UYuawwQadfsZNSUucWLr0ciqxEIwDHE"
+
+[triggers]
+crons = ["0 4 * * *"]
+
+[[kv_namespaces]]
+binding = "KHAU_KV"
+id = "$KV_ID"

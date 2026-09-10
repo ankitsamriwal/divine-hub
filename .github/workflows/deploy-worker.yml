@@ -13,15 +13,39 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Ensure KV namespace exists
+      run: |
+        cd worker
+        npx -y wrangler@latest kv namespace list > kv.json || echo "[]" > kv.json
+        ID=$(python3 -c "import json;ns=json.load(open('kv.json'));print(next((n['id'] for n in ns if 'KHAU_PUSH' in n.get('title','')),''))")
+        if [ -z "$ID" ]; then
+          npx -y wrangler@latest kv namespace create KHAU_PUSH > kvcreate.txt
+          ID=$(grep -oE '[a-f0-9]{32}' kvcreate.txt | head -1)
+        fi
+        echo "KV namespace id: $ID"
+        sed -i "s/\\$KV_ID/$ID/" wrangler.toml
+
     - name: Deploy worker via wrangler
       run: |
         cd worker && npx -y wrangler@latest deploy
+
+    - name: Set VAPID key as worker secret
+      run: |
+        printf '%s' "$VAPID_JWK" | npx -y wrangler@latest secret put VAPID_JWK --name "$WORKER_NAME"
+      env:
+        VAPID_JWK: ${{ secrets.VAPID_JWK }}
 
     - name: Set Gemini key as worker secret
       run: |
         printf '%s' "$GEMINI_API_KEY" | npx -y wrangler@latest secret put GEMINI_API_KEY --name "$WORKER_NAME"
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    - name: Smoke test push routes
+      run: |
+        sleep 3
+        curl -s -w '\npush-data (expect 401): %{http_code}\n' -o /dev/null \
+          "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/push-data"
 
     - name: Smoke test (CORS + endpoint shape)
       run: |
