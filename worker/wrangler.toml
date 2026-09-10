@@ -14,4 +14,4 @@ crons = ["0 4 * * *"]
 
 [[kv_namespaces]]
 binding = "KHAU_KV"
-id = "$KV_ID"
+id = "14dc732542164efea1cb0d522ec593bb"
