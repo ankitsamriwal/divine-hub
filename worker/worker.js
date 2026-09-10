@@ -6,7 +6,8 @@
 const ALLOWED_ORIGINS = new Set([
   'https://ankitsamriwal.github.io',
   'https://roadtodivinity.vercel.app',
-  'https://prarthana-six.vercel.app'
+  'https://prarthana-six.vercel.app',
+  'https://aajkyapehnu.vercel.app'
 ]);
 const MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 const RATE_LIMIT = 20;          // requests
@@ -60,10 +61,20 @@ export default {
 
     // Constrain what the public can send: capped history, fixed generation config.
     const sys = (body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0] && String(body.system_instruction.parts[0].text || '')).slice(0, 45000);
-    const contents = Array.isArray(body.contents) ? body.contents.slice(-10).map(c => ({
-      role: c.role === 'model' ? 'model' : 'user',
-      parts: [{ text: String((c.parts && c.parts[0] && c.parts[0].text) || '').slice(0, 4000) }]
-    })).filter(c => c.parts[0].text) : [];
+    let imgCount = 0;
+    const contents = Array.isArray(body.contents) ? body.contents.slice(-10).map(c => {
+      const parts = Array.isArray(c.parts) ? c.parts.slice(0, 4).map(p => {
+        if (p && p.inline_data && typeof p.inline_data.data === 'string') {
+          const mt = String(p.inline_data.mime_type || p.inline_data.mimeType || '');
+          if (!/^image\/(jpeg|png|webp)$/.test(mt) || imgCount >= 2) return null;
+          imgCount++;
+          return { inline_data: { mime_type: mt, data: p.inline_data.data.slice(0, 1500000) } };
+        }
+        const t = String((p && p.text) || '').slice(0, 4000);
+        return t ? { text: t } : null;
+      }).filter(Boolean) : [];
+      return { role: c.role === 'model' ? 'model' : 'user', parts };
+    }).filter(c => c.parts.length) : [];
     if (!contents.length || !sys) return new Response(JSON.stringify({ error: 'missing_fields' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } });
 
     const payload = {
