@@ -53,6 +53,7 @@ async function handlePushRoute(request, env, url, headers){
   if(url.pathname === '/sync' && request.method === 'POST'){
     if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
     let d; try{ d = await request.json(); }catch{ return json({error:'bad_json'}, 400); }
+    if (d.diag) await env.KHAU_KV.put('diag', JSON.stringify({diag:String(d.diag).slice(0,300), at:Date.now()}));
     const meals = Array.isArray(d.meals) ? d.meals.map(String).slice(0,4) : [];
     const items = Array.isArray(d.items) ? d.items.map(String).slice(0,60) : [];
     await env.KHAU_KV.put('list', JSON.stringify({date:String(d.date||''), meals, items, savedAt:Date.now()}));
@@ -61,7 +62,9 @@ async function handlePushRoute(request, env, url, headers){
   if(url.pathname === '/push-data' && request.method === 'GET'){
     if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
     const list = await env.KHAU_KV.get('list', 'json');
-    return json(list || {meals:[], items:[]});
+    const diag = await env.KHAU_KV.get('diag', 'json');
+    const out = list || {meals:[], items:[]}; out.subscribed = !!(await env.KHAU_KV.get('subscription')); out.diag = diag || null;
+    return json(out);
   }
   if(url.pathname === '/debug-push' && request.method === 'GET'){
     if(!pushKeyOk(request)) return json({error:'bad_key'}, 401);
