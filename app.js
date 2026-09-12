@@ -407,6 +407,8 @@
     return null;
   }
 
+  window.dhTTS = { pickVoice: pickVoice, voiceGender: voiceGender, DEITY_VOICE_GENDER: DEITY_VOICE_GENDER };
+
   function stopSpeech() {
     if (synth) synth.cancel();
     const note = document.getElementById('ttsNote');

@@ -83,6 +83,61 @@
     }
   ];
 
+
+  /* Sankalp+ advanced tracks: long-form sadhanas built on the same corpus.
+     Episodes cycle so each day of the window has one sitting. */
+  function cycleEpisodes(pool, days) {
+    const eps = [];
+    for (let i = 0; i < days; i++) {
+      const e = pool[i % pool.length];
+      eps.push({ p: e.p, t: 'Day ' + (i + 1) + ' — ' + e.t, from: e.from, to: e.to });
+    }
+    return eps;
+  }
+  const PLUS_JOURNEYS = [
+    {
+      id: 'hanuman-sadhana-40',
+      plus: true,
+      title: 'Hanuman Sadhana — 40 Days',
+      titleDev: 'हनुमान साधना',
+      about: 'A Sankalp+ track. Forty days with Bajrangbali — the Chalisa in three parts cycling with the Sankatmochan and his aarti. The classic anushthana for strength.',
+      episodes: cycleEpisodes([
+        { p: 'hanuman-chalisa', t: 'Chalisa, Part 1', from: 0, to: 9 },
+        { p: 'hanuman-chalisa', t: 'Chalisa, Part 2', from: 10, to: 25 },
+        { p: 'hanuman-chalisa', t: 'Chalisa, Part 3', from: 26, to: 42 },
+        { p: 'sankatmochan-ashtak', t: 'Sankatmochan Naam Tiharo' },
+        { p: 'hanuman-aarti', t: 'Aarti Kije Hanuman Lala Ki' }
+      ], 40)
+    },
+    {
+      id: 'lakshmi-abundance-21',
+      plus: true,
+      title: 'Lakshmi Abundance — 21 Days',
+      titleDev: 'लक्ष्मी साधना',
+      about: 'A Sankalp+ track. Three weeks inviting plenty — Mahalakshmi\'s aarti and ashtakam with the universal aarti. Pair it with a wealth sankalp.',
+      episodes: cycleEpisodes([
+        { p: 'om-jai-lakshmi-mata', t: 'Om Jai Lakshmi Mata' },
+        { p: 'mahalakshmi-ashtakam', t: 'Mahalakshmi Ashtakam' },
+        { p: 'om-jai-jagdish-hare', t: 'Om Jai Jagdish Hare' }
+      ], 21)
+    },
+    {
+      id: 'shiva-stillness-21',
+      plus: true,
+      title: 'Shiva Stillness — 21 Days',
+      titleDev: 'शिव साधना',
+      about: 'A Sankalp+ track. Twenty-one evenings with Mahadev — the aarti, the Chalisa and the Lingashtakam. For a sankalp of calm and discipline.',
+      episodes: cycleEpisodes([
+        { p: 'om-jai-shiv-omkara', t: 'Om Jai Shiv Omkara' },
+        { p: 'shiv-chalisa', t: 'Shiv Chalisa' },
+        { p: 'lingashtakam', t: 'Lingashtakam' }
+      ], 21)
+    }
+  ];
+  const ALL_JOURNEYS = JOURNEYS.concat(PLUS_JOURNEYS);
+
+  function plusActive() { return !!(window.dhPlus && window.dhPlus.isActive()); }
+
   function load() {
     try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
   }
@@ -144,7 +199,8 @@
 
     // Continue card: first in-progress journey
     let cont = '';
-    for (const j of JOURNEYS) {
+    for (const j of ALL_JOURNEYS) {
+      if (j.plus && !plusActive()) continue;
       const st = journeyStats(j, state);
       if (st.done > 0 && st.done < st.total) {
         const ni = nextUndone(j, state);
@@ -162,14 +218,15 @@
       '<div class="jn-head"><h3 class="jn-heading">Journeys</h3>' +
       '<p class="jn-sub">A scripture becomes something you finish, one short sitting at a time.</p></div>' +
       cont +
-      '<div class="jn-grid">' + JOURNEYS.map(j => {
+      '<div class="jn-grid">' + ALL_JOURNEYS.map(j => {
         const st = journeyStats(j, state);
         const pct = Math.round((st.done / st.total) * 100);
         const status = st.done === st.total ? 'Completed 🪔' : (st.done > 0 ? st.done + ' of ' + st.total + ' done' : st.total + ' episodes');
-        return '<button class="jn-card" data-j="' + j.id + '">' +
+        const locked = j.plus && !plusActive();
+        return '<button class="jn-card' + (locked ? ' jn-locked' : '') + '" data-j="' + j.id + '">' +
           '<span class="jn-card-dev">' + j.titleDev + '</span>' +
-          '<span class="jn-card-title">' + j.title + '</span>' +
-          '<span class="jn-card-meta">' + status + '</span>' +
+          '<span class="jn-card-title">' + j.title + (j.plus ? ' ✨' : '') + '</span>' +
+          '<span class="jn-card-meta">' + (locked ? 'Sankalp+ · tap to unlock' : status) + '</span>' +
           '<span class="jn-bar"><span class="jn-fill" style="width:' + pct + '%"></span></span>' +
           '</button>';
       }).join('') + '</div>';
@@ -183,8 +240,9 @@
   /* ---------- journey detail overlay ---------- */
   let overlay = null;
   function openJourney(jid) {
-    const j = JOURNEYS.find(x => x.id === jid);
+    const j = ALL_JOURNEYS.find(x => x.id === jid);
     if (!j) return;
+    if (j.plus && !plusActive()) { if (window.dhPlus) window.dhPlus.open(); return; }
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'journeyView';
@@ -243,7 +301,7 @@
   }
 
   function startEpisode(jid, ei) {
-    const j = JOURNEYS.find(x => x.id === jid);
+    const j = ALL_JOURNEYS.find(x => x.id === jid);
     if (!j) return;
     const e = j.episodes[ei];
     const r = episodeRange(j, e);
@@ -260,7 +318,7 @@
     if (e.target && e.target.id === 'fvClose') setTimeout(renderSection, 50);
   });
 
-  window.dhJourneys = { list: JOURNEYS, stats: journeyStats, load: load, nextUndone: nextUndone, open: startEpisode, refresh: renderSection };
+  window.dhJourneys = { list: ALL_JOURNEYS, stats: journeyStats, load: load, nextUndone: nextUndone, open: startEpisode, refresh: renderSection };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderSection);
