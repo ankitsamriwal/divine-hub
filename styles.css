@@ -2548,6 +2548,7 @@ body {
   position: fixed; inset: 0; z-index: 95; background: rgba(10, 7, 5, 0.72);
   display: flex; align-items: flex-end; justify-content: center; padding: 0;
 }
+.pk-card-overlay[hidden] { display: none; }
 @media (min-width: 700px) { .pk-card-overlay { align-items: center; padding: 2rem; } }
 .pk-card {
   position: relative; width: 100%; max-width: 560px; max-height: 86vh; overflow-y: auto;
