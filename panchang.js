@@ -450,19 +450,34 @@
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  var TITHI_CELL = {
+    Pratipada: 'Prat.', Dwitiya: 'Dwit.', Tritiya: 'Trit.', Chaturthi: 'Chatur.',
+    Panchami: 'Panch.', Shashthi: 'Shash.', Saptami: 'Sapt.', Ashtami: 'Asht.',
+    Navami: 'Nav.', Dashami: 'Dash.', Ekadashi: 'Ekad.', Dwadashi: 'Dwad.',
+    Trayodashi: 'Trayo.', Chaturdashi: 'Chaturd.', Purnima: 'Purnima', Amavasya: 'Amavasya'
+  };
+  function cellTithi(t) { return (t.paksha === 'Shukla' ? 'S. ' : 'K. ') + (TITHI_CELL[t.name] || t.name); }
+  function cellFestival(name) {
+    return String(name).replace(/Chaturthi/g, 'Chatur.').replace(/Janmashtami/g, 'Janmasht.');
+  }
+
   function cellHTML(r) {
     var today = new Date();
     var isToday = r.iso === isoOf(today.getFullYear(), today.getMonth(), today.getDate());
     var cls = 'pk-cell' + (r.important ? ' pk-imp' : '') + (isToday ? ' pk-today' : '') +
       (r.festivals.length ? ' pk-fest' : '') + ' pk-paksha-' + (r.primary.paksha === 'Shukla' ? 'light' : 'dark');
-    var short = (r.tithi.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithi.name;
-    if (r.tithiLater) short += ' \u25B8 ' + (r.tithiLater.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithiLater.name;
+    var short = cellTithi(r.tithi);
+    if (r.tithiLater) {
+      var later = TITHI_CELL[r.tithiLater.name] || r.tithiLater.name;
+      short += ' \u25B8 ' + (r.tithiLater.paksha === r.tithi.paksha ? '' :
+        (r.tithiLater.paksha === 'Shukla' ? 'S. ' : 'K. ')) + later;
+    }
     var bell = reminderFor(r.iso) ? '🔔' : '🔕';
     return '<button class="' + cls + '" data-iso="' + r.iso + '" aria-label="' +
       esc(fmtISO(r.iso) + ' ' + r.tithi.paksha + ' ' + r.tithi.name) + '">' +
       '<span class="pk-date">' + r.d + '</span>' +
       '<span class="pk-tithi">' + esc(short) + '</span>' +
-      (r.festivals.length ? '<span class="pk-festname">' + esc(r.festivals[0].name) + '</span>' : '') +
+      (r.festivals.length ? '<span class="pk-festname">' + esc(cellFestival(r.festivals[0].name)) + '</span>' : '') +
       (r.festivals.length ? '<span class="pk-festdot" title="' + esc(r.festivals.map(function (f) { return f.name; }).join(', ')) + '">🪔</span>' : '') +
       (r.important ? '<span class="pk-bell" data-iso="' + r.iso + '" role="button" aria-label="Reminder for ' + esc(fmtISO(r.iso)) + '">' + bell + '</span>' : '') +
       '</button>';

@@ -2714,3 +2714,11 @@ body {
 .pk-card .pk-card-note { color: #684f41; }
 .pk-card .pk-card-bell { color: #fffaf0; background: #8f3429; border-color: #8f3429; }
 .pk-card .pk-card-bell.on { color: #fffaf0; background: #4f6848; border-color: #4f6848; }
+
+/* v40 phone label polish: deliberate abbreviations keep every cell readable. */
+.pk-tithi,
+.pk-festname { overflow-wrap: normal; word-break: normal; hyphens: none; }
+@media (max-width: 654px) {
+  .pk-tithi { font-size: .48rem; line-height: 1.15; }
+  .pk-festname { font-size: .46rem; line-height: 1.08; }
+}
