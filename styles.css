@@ -2722,3 +2722,42 @@ body {
   .pk-tithi { font-size: .48rem; line-height: 1.15; }
   .pk-festname { font-size: .46rem; line-height: 1.08; }
 }
+
+/* Panchang v41 - Sacred Editorial direction */
+.panchang-sheet {
+  --pk-paper:#f7f1e7; --pk-ink:#3f241a; --pk-red:#8d3028; --pk-leaf:#65745b;
+  background:
+    radial-gradient(circle at 10px 10px,rgba(92,55,38,.035) .7px,transparent .8px) 0 0/6px 6px,
+    linear-gradient(180deg,#fbf7ef 0%,#f4eadc 100%);
+}
+.panchang-sheet::before,.panchang-sheet::after{display:none}
+.panchang-sheet .info-title{font-family:'Tiro Devanagari Hindi','Cormorant Garamond',serif;font-weight:400;letter-spacing:-.015em}
+.pk-kicker{font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:.22em}
+.pk-ornament{height:1.4rem}.pk-ornament span{opacity:.55}.pk-ornament b{font-size:1.35rem}
+.pk-nav{border-top:1px solid rgba(141,48,40,.6);border-bottom:1px solid rgba(141,48,40,.6);padding:.55rem 0;margin:.8rem auto .7rem;max-width:780px}
+.pk-month-label{font-family:'Cormorant Garamond','Tiro Devanagari Hindi',serif;font-size:1.38rem;font-weight:500;letter-spacing:.01em}
+.pk-nav-btn{border:0;background:transparent;box-shadow:none;border-radius:2px}
+.pk-book{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.pk-weekdays{border-radius:0;background:transparent;color:var(--pk-red);border-bottom:1px solid rgba(141,48,40,.65);padding:8px 2px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:.12em}
+.pk-grid{gap:0;border-left:1px solid rgba(92,55,38,.27);border-top:1px solid rgba(92,55,38,.27)}
+.pk-cell{min-height:76px;border-radius:0;border:0;border-right:1px solid rgba(92,55,38,.27);border-bottom:1px solid rgba(92,55,38,.27);background:rgba(255,252,246,.72);padding:7px 6px}
+.pk-cell:nth-child(7n+1),.pk-cell:nth-child(7n){background:rgba(244,229,215,.58)}
+.pk-cell.pk-paksha-light,.pk-cell.pk-paksha-dark{box-shadow:none}
+.pk-date{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:500}
+.pk-tithi{font-family:'Space Grotesk',sans-serif;font-size:.57rem;color:#765e50}
+.pk-imp{background:#ead4aa !important}.pk-imp .pk-date{background:transparent;color:var(--pk-red);width:auto;height:auto;border-radius:0;font-size:1.08rem}
+.pk-today{border:0;outline:1px solid var(--pk-red);outline-offset:-4px;box-shadow:none !important}
+.pk-fest{background:#d9dfce !important;border-color:rgba(92,55,38,.27)}
+.pk-festdot{font-size:.55rem;filter:saturate(.75)}
+.pk-bell{background:transparent;opacity:.62}
+.pk-legend{border-top:1px solid rgba(141,48,40,.45);padding-top:.7rem;color:#735a4c}
+.pk-card-overlay{background:rgba(48,27,20,.78)}
+.pk-card{background:radial-gradient(circle at 10px 10px,rgba(92,55,38,.035) .7px,transparent .8px) 0 0/6px 6px,#f7f1e7;border:0;border-radius:0!important;box-shadow:0 30px 80px rgba(28,15,10,.38);padding:2rem 1.75rem 2.2rem}
+.pk-card::before{content:'PAÑCĀṄGA · SACRED RITUAL';font-family:'Space Grotesk',sans-serif;font-size:.58rem;letter-spacing:.2em;text-align:left;border-bottom:1px solid rgba(141,48,40,.55);padding-bottom:.85rem;margin-bottom:1rem}
+.pk-card-close{border:0;background:transparent;border-radius:0;color:var(--pk-ink)}
+.pk-card .pk-card-tithi{font-family:'Cormorant Garamond','Tiro Devanagari Hindi',serif;font-size:2rem;font-weight:500;letter-spacing:-.02em}
+.pk-card .pk-card-dev{font-weight:400}
+.pk-card .pk-card-h{font-family:'Space Grotesk',sans-serif;font-size:.68rem;letter-spacing:.17em;border-top:1px solid rgba(141,48,40,.3);padding-top:.9rem}
+.pk-card .pk-card-jaap{background:#e8d8bf;border:0;border-radius:0;text-align:center;padding:1rem}
+.pk-card .pk-card-bell{border-radius:0;padding:1rem;letter-spacing:.03em}
+@media(max-width:654px){.pk-cell{min-height:68px;padding:5px 4px}.pk-book{padding:0}.pk-weekdays{font-size:.53rem}.pk-card{padding:1.65rem 1.35rem 2rem}.pk-card .pk-card-tithi{font-size:1.75rem}}

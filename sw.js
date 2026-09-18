@@ -3,7 +3,7 @@ const CACHE = 'divine-hub-v40';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=40',
+  './styles.css?v=41',
   './backnav.js?v=39',
   './app.js?v=39',
   './focus.js?v=39',
@@ -13,7 +13,7 @@ const CORE = [
   './sankalp.js?v=39',
   './quizzes.js?v=39',
   './almanac.js?v=39',
-  './panchang.js?v=40',
+  './panchang.js?v=41',
   './sandhya.js?v=39',
   './ambience.js?v=39',
   './assets/bells.mp3',
