@@ -2688,3 +2688,29 @@ body {
   .pk-tithi { font-size:.48rem; }
   .pk-festname { display:none; }
 }
+/* v40 contrast fix: the detail overlay is outside .panchang-sheet, so it needs
+   its own palette variables rather than inheriting the calendar sheet scope. */
+.pk-card {
+  --pk-paper: #f4ead1;
+  --pk-ink: #48271e;
+  --pk-red: #8f3429;
+  --pk-saffron: #d9852b;
+  --pk-leaf: #5f7451;
+}
+.pk-card .pk-card-tithi { color: #7f2f27; font-weight: 700; }
+.pk-card .pk-card-dev { color: #8f3429; font-weight: 600; }
+.pk-card .pk-card-h { color: #7f2f27; font-weight: 800; }
+.pk-card .pk-card-date,
+.pk-card .pk-card-timeline span { color: #6e5546; }
+.pk-card .pk-card-deity { color: #5d473b; font-weight: 700; }
+.pk-card .pk-card-about,
+.pk-card .pk-card-list,
+.pk-card .pk-card-fast { color: #594338; }
+.pk-card .pk-card-fest { color: #30442e; }
+.pk-card .pk-card-fest-dev { color: #536c49; }
+.pk-card .pk-jaap-dev { color: #7f2f27; font-weight: 700; }
+.pk-card .pk-jaap-line { color: #48271e; font-weight: 600; }
+.pk-card .pk-jaap-note,
+.pk-card .pk-card-note { color: #684f41; }
+.pk-card .pk-card-bell { color: #fffaf0; background: #8f3429; border-color: #8f3429; }
+.pk-card .pk-card-bell.on { color: #fffaf0; background: #4f6848; border-color: #4f6848; }
