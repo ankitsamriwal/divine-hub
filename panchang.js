@@ -454,7 +454,7 @@
     var today = new Date();
     var isToday = r.iso === isoOf(today.getFullYear(), today.getMonth(), today.getDate());
     var cls = 'pk-cell' + (r.important ? ' pk-imp' : '') + (isToday ? ' pk-today' : '') +
-      (r.festivals.length ? ' pk-fest' : '');
+      (r.festivals.length ? ' pk-fest' : '') + ' pk-paksha-' + (r.primary.paksha === 'Shukla' ? 'light' : 'dark');
     var short = (r.tithi.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithi.name;
     if (r.tithiLater) short += ' \u25B8 ' + (r.tithiLater.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithiLater.name;
     var bell = reminderFor(r.iso) ? '🔔' : '🔕';
@@ -462,6 +462,7 @@
       esc(fmtISO(r.iso) + ' ' + r.tithi.paksha + ' ' + r.tithi.name) + '">' +
       '<span class="pk-date">' + r.d + '</span>' +
       '<span class="pk-tithi">' + esc(short) + '</span>' +
+      (r.festivals.length ? '<span class="pk-festname">' + esc(r.festivals[0].name) + '</span>' : '') +
       (r.festivals.length ? '<span class="pk-festdot" title="' + esc(r.festivals.map(function (f) { return f.name; }).join(', ')) + '">🪔</span>' : '') +
       (r.important ? '<span class="pk-bell" data-iso="' + r.iso + '" role="button" aria-label="Reminder for ' + esc(fmtISO(r.iso)) + '">' + bell + '</span>' : '') +
       '</button>';

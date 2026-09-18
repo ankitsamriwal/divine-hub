@@ -1,9 +1,9 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v39';
+const CACHE = 'divine-hub-v40';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=39',
+  './styles.css?v=40',
   './backnav.js?v=39',
   './app.js?v=39',
   './focus.js?v=39',
@@ -13,7 +13,7 @@ const CORE = [
   './sankalp.js?v=39',
   './quizzes.js?v=39',
   './almanac.js?v=39',
-  './panchang.js?v=39',
+  './panchang.js?v=40',
   './sandhya.js?v=39',
   './ambience.js?v=39',
   './assets/bells.mp3',
