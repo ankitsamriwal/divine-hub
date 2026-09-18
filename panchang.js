@@ -417,20 +417,28 @@
 
   function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 
+  function sunsetOf(y, m, d) { return new Date(y, m, d, 18, 0, 0, 0); }
+
   function monthData(y, m) {
     var dim = daysInMonth(y, m);
     var rows = [];
     for (var d = 1; d <= dim; d++) {
-      var sr = sunriseOf(y, m, d);
-      var t = tithiInfo(tithiAt(sr));
-      var g = cardGuide(t);
+      var t = tithiInfo(tithiAt(sunriseOf(y, m, d)));
+      var t2 = tithiInfo(tithiAt(sunsetOf(y, m, d)));
+      var g1 = cardGuide(t);
+      var g2 = t2.index !== t.index ? cardGuide(t2) : null;
+      /* the day's primary tithi: the important one if either is, else sunrise */
+      var primary = (g2 && g2.important && !(g1 && g1.important)) ? t2 : t;
+      var g = cardGuide(primary);
       rows.push({
         d: d,
         iso: isoOf(y, m, d),
         weekday: new Date(y, m, d).getDay(),
         tithi: t,
+        tithiLater: (t2.index !== t.index) ? t2 : null,
+        primary: primary,
         guide: g,
-        important: !!(g && g.important),
+        important: !!((g1 && g1.important) || (g2 && g2.important)),
         festivals: festivalsOn(isoOf(y, m, d))
       });
     }
@@ -448,6 +456,7 @@
     var cls = 'pk-cell' + (r.important ? ' pk-imp' : '') + (isToday ? ' pk-today' : '') +
       (r.festivals.length ? ' pk-fest' : '');
     var short = (r.tithi.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithi.name;
+    if (r.tithiLater) short += ' \u25B8 ' + (r.tithiLater.paksha === 'Shukla' ? 'S' : 'K') + '. ' + r.tithiLater.name;
     var bell = reminderFor(r.iso) ? '🔔' : '🔕';
     return '<button class="' + cls + '" data-iso="' + r.iso + '" aria-label="' +
       esc(fmtISO(r.iso) + ' ' + r.tithi.paksha + ' ' + r.tithi.name) + '">' +
@@ -546,8 +555,12 @@
     var p = iso.split('-').map(Number);
     var y = p[0], m = p[1] - 1, d = p[2];
     var sr = sunriseOf(y, m, d);
-    var t = tithiInfo(tithiAt(sr));
-    var g = cardGuide(t);
+    var t0 = tithiInfo(tithiAt(sr));
+    var t2 = tithiInfo(tithiAt(sunsetOf(y, m, d)));
+    var g0 = cardGuide(t0);
+    var g2 = t2.index !== t0.index ? cardGuide(t2) : null;
+    var t = (g2 && g2.important && !(g0 && g0.important)) ? t2 : t0;
+    var g = cardGuide(t) || g0 || g2;
     var timeline = tithiTimeline(y, m, d);
     var fests = festivalsOn(iso);
     var overlay = document.getElementById('pkCardOverlay');
