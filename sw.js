@@ -1,31 +1,32 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v37';
+const CACHE = 'divine-hub-v38';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=37',
-  './backnav.js?v=37',
-  './app.js?v=37',
-  './focus.js?v=37',
-  './journeys.js?v=37',
-  './sadhana.js?v=37',
-  './plus.js?v=37',
-  './sankalp.js?v=37',
-  './quizzes.js?v=37',
-  './almanac.js?v=37',
-  './sandhya.js?v=37',
-  './ambience.js?v=37',
+  './styles.css?v=38',
+  './backnav.js?v=38',
+  './app.js?v=38',
+  './focus.js?v=38',
+  './journeys.js?v=38',
+  './sadhana.js?v=38',
+  './plus.js?v=38',
+  './sankalp.js?v=38',
+  './quizzes.js?v=38',
+  './almanac.js?v=38',
+  './panchang.js?v=38',
+  './sandhya.js?v=38',
+  './ambience.js?v=38',
   './assets/bells.mp3',
   './assets/hanuman-aarti.mp3',
-  './data.js?v=37',
-  './data2.js?v=37',
-  './data3.js?v=37',
-  './data4.js?v=37',
-  './festivals.js?v=37',
-  './guides.js?v=37',
-  './why.js?v=37',
-  './japa.js?v=37',
-  './sections.js?v=37',
+  './data.js?v=38',
+  './data2.js?v=38',
+  './data3.js?v=38',
+  './data4.js?v=38',
+  './festivals.js?v=38',
+  './guides.js?v=38',
+  './why.js?v=38',
+  './japa.js?v=38',
+  './sections.js?v=38',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -69,4 +70,33 @@ self.addEventListener('fetch', e => {
       return res;
     }))
   );
+});
+
+/* panchang reminder push: worker sends a payload-less tick; fetch the fired tithi */
+self.addEventListener('push', e => {
+  const fallback = () => self.registration.showNotification('🌙 Panchang reminder', {
+    body: "Open Divine Hub for today's tithi, rituals and mantra jaap.",
+    icon: './icons/icon-192.png', badge: './icons/icon-192.png', data: { url: './' }
+  });
+  e.waitUntil(
+    fetch('https://divine-guide.ankitsamriwal.workers.dev/dh-push-data', { headers: { 'x-push-key': '1OI7dIZ5gi9od8fMsp6xBeMo16iYSfS2' } })
+      .then(r => r.json())
+      .then(d => {
+        const last = d && d.last;
+        const title = last && last.tithi ? '🌙 ' + last.paksha + ' ' + last.tithi + ' today' : '🌙 Panchang reminder';
+        const body = last && last.tithi
+          ? "Your reminder: " + last.paksha + ' ' + last.tithi + " today. Open for the day's rituals and mantra jaap."
+          : "Open Divine Hub for today's tithi, rituals and mantra jaap.";
+        return self.registration.showNotification(title, {
+          body: body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', data: { url: './' }
+        });
+      })
+      .catch(fallback)
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(clients.openWindow(url));
 });

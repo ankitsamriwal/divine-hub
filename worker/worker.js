@@ -73,6 +73,61 @@ async function handlePushRoute(request, env, url, headers){
   return null;
 }
 
+/* ---- Divine Hub panchang reminders: tithi push notifications ---- */
+// Single-subscriber model like the grocery push: one device subscription under
+// 'dh:subscription', the reminder list under 'dh:reminders' in the same KV.
+async function sendPanchangPush(env, rem) {
+  const sub = await env.KHAU_KV.get('dh:subscription', 'json');
+  if (!sub || !sub.endpoint) return { skipped: 'no_subscription' };
+  // payload-less push (proven path, same as grocery push); the service worker
+  // fetches /dh-push-data to learn which tithi fired and renders the text.
+  await env.KHAU_KV.put('dh:last', JSON.stringify({ date: rem.date, tithi: rem.tithi, paksha: rem.paksha, firedAt: Date.now() }));
+  const jwt = await vapidJwt(sub.endpoint, env);
+  const res = await fetch(sub.endpoint, { method: 'POST', headers: { 'Authorization': 'vapid t=' + jwt + ', k=' + env.VAPID_PUB, 'TTL': '86400' } });
+  if (res.status === 404 || res.status === 410) await env.KHAU_KV.delete('dh:subscription');
+  return { status: res.status };
+}
+async function runPanchangReminders(env) {
+  if (!env.KHAU_KV || !env.VAPID_JWK || !env.VAPID_PUB) return { skipped: 'missing_env' };
+  const rems = await env.KHAU_KV.get('dh:reminders', 'json') || [];
+  // fire reminders whose date is "today" in Asia/Dubai (UTC+4)
+  const dxb = new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10);
+  const due = rems.filter(r => r && r.date === dxb);
+  const keep = rems.filter(r => r && r.date >= dxb && !(r.date === dxb));
+  if (due.length) await env.KHAU_KV.put('dh:reminders', JSON.stringify(keep));
+  const sent = [];
+  for (const r of due) sent.push(await sendPanchangPush(env, r));
+  return { today: dxb, due: due.length, sent };
+}
+async function handleDhRoute(request, env, url, headers) {
+  const json = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: { ...headers, 'Content-Type': 'application/json' } });
+  if (url.pathname === '/dh-subscribe' && request.method === 'POST') {
+    if (!pushKeyOk(request)) return json({ error: 'bad_key' }, 401);
+    let d; try { d = await request.json(); } catch { return json({ error: 'bad_json' }, 400); }
+    if (!d || !d.subscription || !d.subscription.endpoint) return json({ error: 'bad_subscription' }, 400);
+    const rems = (Array.isArray(d.reminders) ? d.reminders : [])
+      .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date || '')))
+      .map(r => ({ date: String(r.date), tithi: String(r.tithi || '').slice(0, 20), paksha: String(r.paksha || '').slice(0, 10) }))
+      .slice(0, 60);
+    await env.KHAU_KV.put('dh:subscription', JSON.stringify(d.subscription));
+    await env.KHAU_KV.put('dh:reminders', JSON.stringify(rems));
+    return json({ ok: true, reminders: rems.length });
+  }
+  if (url.pathname === '/dh-push-data' && request.method === 'GET') {
+    if (!pushKeyOk(request)) return json({ error: 'bad_key' }, 401);
+    return json({
+      subscribed: !!(await env.KHAU_KV.get('dh:subscription')),
+      reminders: (await env.KHAU_KV.get('dh:reminders', 'json')) || [],
+      last: (await env.KHAU_KV.get('dh:last', 'json')) || null
+    });
+  }
+  if (url.pathname === '/dh-debug-push' && request.method === 'GET') {
+    if (!pushKeyOk(request)) return json({ error: 'bad_key' }, 401);
+    return json(await runPanchangReminders(env));
+  }
+  return null;
+}
+
 function rateOk(ip) {
   const now = Date.now();
   let b = buckets.get(ip);
@@ -101,8 +156,8 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
 
     const url = new URL(request.url);
-    if (url.pathname.startsWith('/subscribe') || url.pathname.startsWith('/sync') || url.pathname.startsWith('/push-data') || url.pathname.startsWith('/debug-push')) {
-      try { const r = await handlePushRoute(request, env, url, headers); if (r) return r; } catch (e) { return new Response(JSON.stringify({ error: 'push_route_error', detail: String(e && e.message || e).slice(0, 200) }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }); }
+    if (url.pathname.startsWith('/subscribe') || url.pathname.startsWith('/sync') || url.pathname.startsWith('/push-data') || url.pathname.startsWith('/debug-push') || url.pathname.startsWith('/dh-')) {
+      try { const r = (await handlePushRoute(request, env, url, headers)) || (await handleDhRoute(request, env, url, headers)); if (r) return r; } catch (e) { return new Response(JSON.stringify({ error: 'push_route_error', detail: String(e && e.message || e).slice(0, 200) }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }); }
     }
     if (url.pathname !== '/chat' || request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'not_found' }), { status: 404, headers: { ...headers, 'Content-Type': 'application/json' } });
@@ -182,6 +237,6 @@ export default {
   },
   // 04:00 UTC = 08:00 Asia/Dubai: push tomorrow's meals + grocery list
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendGroceryPush(env));
+    ctx.waitUntil(Promise.all([sendGroceryPush(env), runPanchangReminders(env)]));
   }
 };

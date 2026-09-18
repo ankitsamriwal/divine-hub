@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=37">
+<link rel="stylesheet" href="styles.css?v=38">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -249,8 +249,30 @@
   </div>
 </section>
 
+<section id="panchangSection" class="info-section dh-sheet panchang-sheet" hidden>
+  <button class="dh-sheet-close" id="panchangClose" aria-label="Close panchang">✕</button>
+  <h2 class="info-title">पंचांग · Panchang</h2>
+  <p class="info-sub">The month's tithis at a glance, computed on your device by the sunrise rule. Tap any day for its rituals and mantra jaap; the bell sets a reminder.</p>
+  <div class="pk-nav">
+    <button id="pkPrev" class="pk-nav-btn" aria-label="Previous month">‹</button>
+    <span id="pkMonthLabel" class="pk-month-label"></span>
+    <button id="pkNext" class="pk-nav-btn" aria-label="Next month">›</button>
+  </div>
+  <div class="pk-book">
+    <div class="pk-page" id="pkPage"></div>
+  </div>
+  <div class="pk-legend">
+    <span>● Purnima</span><span>○ Amavasya</span><span>☾ Ekadashi</span><span>🪔 festival</span><span>🔔 reminder set</span>
+  </div>
+</section>
+
+<div id="pkCardOverlay" class="pk-card-overlay" hidden>
+  <div class="pk-card" id="pkCard" role="dialog" aria-label="Tithi details"></div>
+</div>
+
 <div id="fabMenu" class="fab-menu" hidden>
   <button class="fab-menu-item" id="fabChat"><span class="fmi-ic">🙏</span> Divine Guide</button>
+  <button class="fab-menu-item" id="fabPanchang"><span class="fmi-ic">🌙</span> Panchang</button>
   <button class="fab-menu-item" id="fabSankalp"><span class="fmi-ic">🕉️</span> Sankalp</button>
   <button class="fab-menu-item" id="fabGuides"><span class="fmi-ic">🪔</span> Puja Guides</button>
   <button class="fab-menu-item" id="fabNearby"><span class="fmi-ic">📍</span> Nearby stores</button>
@@ -302,25 +324,26 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 </script>
-<script src="data.js?v=37"></script>
-<script src="data2.js?v=37"></script>
-<script src="data3.js?v=37"></script>
-<script src="data4.js?v=37"></script>
-<script src="festivals.js?v=37"></script>
-<script src="guides.js?v=37"></script>
-<script src="why.js?v=37"></script>
-<script src="app.js?v=37"></script>
-<script src="focus.js?v=37"></script>
-<script src="journeys.js?v=37"></script>
-<script src="sadhana.js?v=37"></script>
-<script src="plus.js?v=37"></script>
-<script src="sankalp.js?v=37"></script>
-<script src="quizzes.js?v=37"></script>
-<script src="almanac.js?v=37"></script>
-<script src="sandhya.js?v=37"></script>
-<script src="japa.js?v=37"></script>
-<script src="sections.js?v=37"></script>
-<script src="ambience.js?v=37"></script>
-<script src="backnav.js?v=37"></script>
+<script src="data.js?v=38"></script>
+<script src="data2.js?v=38"></script>
+<script src="data3.js?v=38"></script>
+<script src="data4.js?v=38"></script>
+<script src="festivals.js?v=38"></script>
+<script src="guides.js?v=38"></script>
+<script src="why.js?v=38"></script>
+<script src="app.js?v=38"></script>
+<script src="focus.js?v=38"></script>
+<script src="journeys.js?v=38"></script>
+<script src="sadhana.js?v=38"></script>
+<script src="plus.js?v=38"></script>
+<script src="sankalp.js?v=38"></script>
+<script src="quizzes.js?v=38"></script>
+<script src="almanac.js?v=38"></script>
+<script src="sandhya.js?v=38"></script>
+<script src="japa.js?v=38"></script>
+<script src="panchang.js?v=38"></script>
+<script src="sections.js?v=38"></script>
+<script src="ambience.js?v=38"></script>
+<script src="backnav.js?v=38"></script>
 </body>
 </html>
