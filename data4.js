@@ -65,6 +65,54 @@ const PRAYERS4 = [
       meaning: 'Salutations to the Lord of hosts, to Ganapati, Lord of Shiva’s attendants. Salutations to the large-bellied, one-tusked destroyer of obstacles, the son of Shiva. Again and again, salutations to the auspicious form that grants blessings.'
     }
   ]
+},
+{
+  id: 'durga-saptashloki',
+  title: 'Durga Saptashloki',
+  titleDev: 'श्री दुर्गा सप्तश्लोकी',
+  deity: 'Durga',
+  deityDev: 'दुर्गा',
+  type: 'Stotram',
+  lang: 'sa',
+  about: 'Seven celebrated verses drawn from the Devi Mahatmyam and recited together as a compact prayer to Durga. The hymn moves from Mahamaya’s power over every mind to refuge, protection, healing and the peace of all three worlds. A fitting short daily path in the weeks leading to Sharad Navratri.',
+  keywords: ['durga', 'saptashloki', 'sapta shloki', 'devi', 'navratri', 'devi mahatmyam', 'durga saptashati', 'narayani', 'mahamaya', 'protection', 'healing'],
+  stanzas: [
+    {
+      dev: ['ज्ञानिनामपि चेतांसि देवी भगवती हि सा।', 'बलादाकृष्य मोहाय महामाया प्रयच्छति॥ १॥'],
+      translit: ['Jnaninam api chetamsi Devi Bhagavati hi sa.', 'Balad akrishya mohaya Mahamaya prayachchhati.'],
+      meaning: 'That blessed Goddess is Mahamaya herself: by her power, she can draw even the minds of the wise toward delusion.'
+    },
+    {
+      dev: ['दुर्गे स्मृता हरसि भीतिमशेषजन्तोः', 'स्वस्थैः स्मृता मतिमतीव शुभां ददासि।', 'दारिद्र्यदुःखभयहारिणि का त्वदन्या', 'सर्वोपकारकरणाय सदाऽऽर्द्रचित्ता॥ २॥'],
+      translit: ['Durge smrita harasi bhitim ashesha-jantoh,', 'Svasthaih smrita matim ativa shubham dadasi.', 'Daridrya-duhkha-bhaya-harini ka tvad anya,', 'Sarvopakara-karanaya sadardra-chitta.'],
+      meaning: 'O Durga, remembered in distress, you remove the fear of every being; remembered in peace, you grant the most auspicious understanding. Who but you removes poverty, sorrow and fear, your heart ever tender in service of all?'
+    },
+    {
+      dev: ['सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके।', 'शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते॥ ३॥'],
+      translit: ['Sarva-mangala-mangalye, Shive, sarvartha-sadhike.', 'Sharanye Tryambake Gauri, Narayani namostu te.'],
+      meaning: 'O auspiciousness within all that is auspicious, benevolent fulfiller of every worthy aim; O refuge, three-eyed Gauri, Narayani, salutations to you.'
+    },
+    {
+      dev: ['शरणागतदीनार्तपरित्राणपरायणे।', 'सर्वस्यार्तिहरे देवि नारायणि नमोऽस्तु ते॥ ४॥'],
+      translit: ['Sharanagata-dinarta-paritrana-parayane.', 'Sarvasyarti-hare Devi, Narayani namostu te.'],
+      meaning: 'Devoted to protecting the helpless and afflicted who seek your refuge, remover of every being’s suffering, O Devi Narayani, salutations to you.'
+    },
+    {
+      dev: ['सर्वस्वरूपे सर्वेशे सर्वशक्तिसमन्विते।', 'भयेभ्यस्त्राहि नो देवि दुर्गे देवि नमोऽस्तु ते॥ ५॥'],
+      translit: ['Sarva-svarupe, Sarveshe, sarva-shakti-samanvite.', 'Bhayebhyas trahi no Devi, Durge Devi namostu te.'],
+      meaning: 'You embody every form, rule over all, and hold every power. Protect us from all fear, O Devi Durga; salutations to you.'
+    },
+    {
+      dev: ['रोगानशेषानपहंसि तुष्टा', 'रुष्टा तु कामान् सकलानभीष्टान्।', 'त्वामाश्रितानां न विपन्नराणां', 'त्वामाश्रिता ह्याश्रयतां प्रयान्ति॥ ६॥'],
+      translit: ['Rogan asheshan apahamsi tushta,', 'Rushta tu kaman sakalan abhishtan.', 'Tvam ashritanam na vipannaranam,', 'Tvam ashrita hy ashrayatam prayanti.'],
+      meaning: 'When pleased, you remove illness without remainder; when displeased, you frustrate every cherished desire. Those who take refuge in you do not fall into ruin; sheltered by you, they become a shelter for others.'
+    },
+    {
+      dev: ['सर्वाबाधाप्रशमनं त्रैलोक्यस्याखिलेश्वरि।', 'एवमेव त्वया कार्यमस्मद्वैरिविनाशनम्॥ ७॥'],
+      translit: ['Sarva-badha-prashamanam trailokyasyakhileshvari.', 'Evam eva tvaya karyam asmad-vairi-vinashanam.'],
+      meaning: 'O sovereign of all, bring peace to every affliction throughout the three worlds. In the same way, destroy the forces of hostility that oppose us.'
+    }
+  ]
 }
 ];
 
