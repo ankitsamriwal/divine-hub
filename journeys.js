@@ -218,7 +218,8 @@
       '<div class="jn-head"><h3 class="jn-heading">Journeys</h3>' +
       '<p class="jn-sub">A scripture becomes something you finish, one short sitting at a time.</p></div>' +
       cont +
-      '<div class="jn-grid">' + ALL_JOURNEYS.map(j => {
+      /* Plus tracks are listed only for Plus users: the one Plus entry lives on Today */
+      '<div class="jn-grid">' + ALL_JOURNEYS.filter(j => !j.plus || plusActive()).map(j => {
         const st = journeyStats(j, state);
         const pct = Math.round((st.done / st.total) * 100);
         const status = st.done === st.total ? 'Completed 🪔' : (st.done > 0 ? st.done + ' of ' + st.total + ' done' : st.total + ' episodes');

@@ -98,7 +98,7 @@
         '</div>' +
         '<h2 class="dc-title">Diya Lit</h2>' +
         '<p class="dc-sub" id="dcSub"></p>' +
-        '<p class="dc-note">Come back tomorrow and keep the flame alive.</p>' +
+        '<p class="dc-note">The diya will be here again tomorrow.</p>' +
         '<button class="dc-close" id="dcClose">🙏</button>';
       document.body.appendChild(celeb);
       celeb.querySelector('#dcClose').addEventListener('click', () => {
@@ -157,8 +157,8 @@
     } else if (key === 'japa') {
       if (window.dhOpenSheet) window.dhOpenSheet('japaSection');
     } else if (key === 'prayer') {
-      const card = document.querySelector('.prayer-grid .prayer-card, .prayer-grid article, .prayer-grid button');
-      if (card) card.click();
+      const pid = window.dhToday && window.dhToday.ritualPrayerId ? window.dhToday.ritualPrayerId() : 'om-jai-jagdish-hare';
+      if (window.dhOpenPrayer) window.dhOpenPrayer(pid);
     } else if (key === 'focus') {
       if (window.dhJourneys) {
         const st = window.dhJourneys.load();
@@ -170,7 +170,8 @@
           }
         }
       }
-      if (window.dhOpenFocus) window.dhOpenFocus('hanuman-chalisa');
+      const fid = window.dhToday && window.dhToday.ritualPrayerId ? window.dhToday.ritualPrayerId() : 'hanuman-chalisa';
+      if (window.dhOpenFocus) window.dhOpenFocus(fid);
     }
   }
 
@@ -182,8 +183,7 @@
 
     // 2. japa rounds: re-render on tab switches + page visibility
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderCard(); maybeCelebrate(); } });
-    const tabPrayers = document.getElementById('tabPrayers');
-    if (tabPrayers) tabPrayers.addEventListener('click', () => setTimeout(() => { renderCard(); maybeCelebrate(); }, 300));
+    document.addEventListener('dh-tab', e => { if (e.detail === 'sadhana') { renderCard(); maybeCelebrate(); } });
 
     // 3. prayer view opened
     const pv = document.getElementById('prayerView');

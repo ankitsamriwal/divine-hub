@@ -14,13 +14,11 @@
   'use strict';
 
   const grid = document.getElementById('prayerGrid');
-  const filterNav = document.getElementById('deityFilter');
   const searchInput = document.getElementById('searchInput');
   const prayerView = document.getElementById('prayerView');
   const prayerContent = document.getElementById('prayerContent');
   const closePrayerBtn = document.getElementById('closePrayer');
 
-  let activeDeities = new Set();
   let searchQuery = '';
   let favsOnly = false;
 
@@ -34,101 +32,23 @@
     if (isFav(id)) favs = favs.filter(x => x !== id); else favs.push(id);
     saveFavs();
     if (favsOnly) renderGrid();
-    updateFavRow();
   }
 
-  const deityOrder = ['Ganesh', 'Hanuman', 'Shiv', 'Lakshmi', 'Vishnu', 'Krishna', 'Durga', 'Saraswati', 'Radha', 'Surya', 'Sai Baba', 'Sheetla Mata', 'Santoshi Mata', 'Bhairav'];
-
-  /* ---------- deity multi-select ---------- */
-  const filterBtn = document.getElementById('deityFilterBtn');
-  const filterMenu = document.getElementById('deityMenu');
-  const filterLabel = document.getElementById('deityFilterLabel');
-
-  function updateFilterLabel() {
-    if (favsOnly) { filterLabel.textContent = '★ Favorites'; return; }
-    const n = activeDeities.size;
-    if (!n) { filterLabel.textContent = 'All deities'; return; }
-    const arr = [...activeDeities];
-    filterLabel.textContent = n <= 2 ? arr.join(' + ') : n + ' deities selected';
-  }
-
-  const favRow = document.createElement('button');
-  favRow.type = 'button';
-  favRow.className = 'deity-option fav-option';
-  favRow.setAttribute('role', 'menuitemcheckbox');
-  favRow.setAttribute('aria-checked', 'false');
-  favRow.addEventListener('click', () => {
-    favsOnly = !favsOnly;
-    if (favsOnly) {
-      activeDeities.clear();
-      Object.values(optionRows).forEach(r => { r.classList.remove('selected'); r.setAttribute('aria-checked', 'false'); });
-      clearRow.hidden = true;
-    }
-    favRow.classList.toggle('selected', favsOnly);
-    favRow.setAttribute('aria-checked', String(favsOnly));
-    updateFilterLabel();
-    renderGrid();
-  });
-  filterMenu.appendChild(favRow);
-  function updateFavRow() {
-    favRow.innerHTML = `<span class="df-check" aria-hidden="true"></span><span class="df-name">★ Favorites</span><span class="df-count">${favs.length}</span>`;
-  }
-  updateFavRow();
-
-  const optionRows = {};
-  deityOrder.forEach(d => {
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'deity-option';
-    row.setAttribute('role', 'menuitemcheckbox');
-    row.setAttribute('aria-checked', 'false');
-    const count = PRAYERS.filter(p => p.deity === d).length;
-    row.innerHTML = `<span class="df-check" aria-hidden="true"></span><span class="df-name">${d}</span><span class="df-count">${count}</span>`;
-    row.addEventListener('click', () => {
-      if (favsOnly) { favsOnly = false; favRow.classList.remove('selected'); favRow.setAttribute('aria-checked', 'false'); }
-      if (activeDeities.has(d)) activeDeities.delete(d); else activeDeities.add(d);
-      const on = activeDeities.has(d);
-      row.classList.toggle('selected', on);
-      row.setAttribute('aria-checked', on);
-      clearRow.hidden = activeDeities.size === 0;
-      updateFilterLabel();
-      renderGrid();
-    });
-    filterMenu.appendChild(row);
-    optionRows[d] = row;
-  });
-
-  const clearRow = document.createElement('button');
-  clearRow.type = 'button';
-  clearRow.className = 'deity-clear';
-  clearRow.textContent = 'Clear \u2014 show all';
-  clearRow.hidden = true;
-  clearRow.addEventListener('click', () => {
-    activeDeities.clear();
-    Object.values(optionRows).forEach(r => { r.classList.remove('selected'); r.setAttribute('aria-checked', 'false'); });
-    clearRow.hidden = true;
-    updateFilterLabel();
-    renderGrid();
-  });
-  filterMenu.appendChild(clearRow);
-
-  function setMenuOpen(open) {
-    filterMenu.hidden = !open;
-    filterBtn.setAttribute('aria-expanded', String(open));
-  }
-  filterBtn.addEventListener('click', e => { e.stopPropagation(); setMenuOpen(filterMenu.hidden); });
-  document.addEventListener('click', e => { if (!filterMenu.hidden && !e.target.closest('.deity-filter')) setMenuOpen(false); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !filterMenu.hidden) { setMenuOpen(false); filterBtn.focus(); } });
+  /* Library search lives in the Library tab; deity rooms (library.js) replace
+     the old deity dropdown. Favorites stay available as the "Saved" room. */
+  const libResults = document.getElementById('libResults');
+  const libResultsHead = document.getElementById('libResultsHead');
+  const libBrowse = document.getElementById('libBrowse');
 
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
+    if (searchQuery) favsOnly = false;
     renderGrid();
   });
 
   /* ---------- grid ---------- */
   function prayerMatches(p) {
     if (favsOnly && !isFav(p.id)) return false;
-    if (activeDeities.size && !activeDeities.has(p.deity)) return false;
     if (!searchQuery) return true;
     const hay = [p.title, p.titleDev, p.deity, p.deityDev, p.type, p.about, (p.keywords || []).join(' '),
       p.stanzas.map(s => s.translit.join(' ') + ' ' + s.dev.join(' ')).join(' ')].join(' ').toLowerCase();
@@ -178,52 +98,35 @@
 
   function renderGrid() {
     grid.innerHTML = '';
+    const active = !!searchQuery || favsOnly;
+    if (libResults) libResults.hidden = !active;
+    if (libBrowse) libBrowse.hidden = active;
+    if (!active) return;
     const list = PRAYERS.filter(prayerMatches);
+    if (libResultsHead) {
+      libResultsHead.innerHTML = favsOnly
+        ? '★ Saved prayers · <button type="button" class="plus-link" id="libClearFavs">show all</button>'
+        : list.length + ' prayer' + (list.length === 1 ? '' : 's') + ' found';
+      const cf = document.getElementById('libClearFavs');
+      if (cf) cf.addEventListener('click', () => { favsOnly = false; renderGrid(); });
+    }
     if (!list.length) {
       grid.innerHTML = favsOnly && !favs.length
-        ? '<div class="empty-state">No favorites yet. Tap the ☆ on any prayer to keep it here for your daily practice.</div>'
-        : '<div class="empty-state">No prayers match. Try another deity or search term.</div>';
+        ? '<div class="empty-state">No saved prayers yet. Tap the ☆ on any prayer to keep it here for your daily practice.</div>'
+        : '<div class="empty-state">No prayers match. Try another word, or tap Ask to put the question to the Divine Guide.</div>';
       return;
     }
-    // Browsing (no search / filter / favorites view): collapsible deity groups,
-    // collapsed by default - short page, big tap targets, nothing buried.
-    const grouped = !searchQuery && !activeDeities.size && !favsOnly;
-    if (!grouped) {
-      const flat = document.createElement('div');
-      flat.className = 'dg-flat';
-      list.forEach(p => flat.appendChild(buildCard(p)));
-      grid.appendChild(flat);
-      return;
-    }
-    deityOrder.forEach(d => {
-      const items = list.filter(p => p.deity === d);
-      if (!items.length) return;
-      const group = document.createElement('section');
-      group.className = 'dg-group';
-      const head = document.createElement('button');
-      head.type = 'button';
-      head.className = 'dg-head';
-      head.setAttribute('aria-expanded', 'false');
-      const devName = (DEITIES[d] && DEITIES[d].dev) ? DEITIES[d].dev : '';
-      head.innerHTML =
-        '<span class="dg-name"><span class="dg-dev">' + devName + '</span>' + d + '</span>' +
-        '<span class="dg-count">' + items.length + ' prayer' + (items.length === 1 ? '' : 's') + '</span>' +
-        '<span class="dg-caret" aria-hidden="true">›</span>';
-      const body = document.createElement('div');
-      body.className = 'dg-body';
-      body.hidden = true;
-      items.forEach(p => body.appendChild(buildCard(p)));
-      head.addEventListener('click', () => {
-        const open = body.hidden;
-        body.hidden = !open;
-        head.setAttribute('aria-expanded', open ? 'true' : 'false');
-        group.classList.toggle('open', open);
-      });
-      group.appendChild(head);
-      group.appendChild(body);
-      grid.appendChild(group);
-    });
+    const flat = document.createElement('div');
+    flat.className = 'dg-flat';
+    list.forEach(p => flat.appendChild(buildCard(p)));
+    grid.appendChild(flat);
   }
+  window.dhPrayerCard = buildCard;
+  window.dhLibrary = {
+    showSaved: function () { favsOnly = true; searchQuery = ''; searchInput.value = ''; renderGrid(); },
+    clear: function () { favsOnly = false; searchQuery = ''; searchInput.value = ''; renderGrid(); },
+    favCount: function () { return favs.length; }
+  };
 
   /* ---------- prayer view ---------- */
   let currentPrayer = null;
@@ -315,8 +218,8 @@
   }
 
   /* ---------- sung version (official YouTube upload, loads only on tap) ---------- */
-  function renderSung(p) {
-    const slot = document.getElementById('sungSlot');
+  function renderSung(p, slotEl) {
+    const slot = slotEl || document.getElementById('sungSlot');
     if (!slot) return;
     const src = (typeof AUDIO_SOURCES !== 'undefined') ? AUDIO_SOURCES[p.id] : null;
     const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -329,13 +232,13 @@
     slot.innerHTML = `
       <div class="sung-card">
         <div class="sung-head"><span class="listen-label">Sung version</span><span class="sung-by">${esc(src.channel)}</span></div>
-        <button type="button" class="sung-thumb" id="sungPlay" aria-label="Play the sung ${esc(p.title)}">
+        <button type="button" class="sung-thumb" aria-label="Play the sung ${esc(p.title)}">
           <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">
           <span class="sung-play" aria-hidden="true">▶</span>
         </button>
         <div class="sung-foot">Plays from YouTube; ads may appear. <a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Open on YouTube ↗</a></div>
       </div>`;
-    document.getElementById('sungPlay').addEventListener('click', () => {
+    slot.querySelector('.sung-thumb').addEventListener('click', function () {
       stopSpeech();
       const frame = document.createElement('iframe');
       frame.className = 'sung-frame';
@@ -344,10 +247,10 @@
       frame.allow = 'autoplay; encrypted-media; picture-in-picture';
       frame.allowFullscreen = true;
       frame.referrerPolicy = 'strict-origin-when-cross-origin';
-      const thumb = document.getElementById('sungPlay');
-      thumb.replaceWith(frame);
+      this.replaceWith(frame);
     });
   }
+  window.dhRenderSung = renderSung;
 
   /* ---------- share ---------- */
   function sharePrayer(p) {
@@ -454,14 +357,18 @@
 
   function speakCurrent() {
     if (!currentPrayer) return;
+    speakPrayer(currentPrayer, document.getElementById('ttsLang').value,
+      document.getElementById('ttsRate').value / 100, document.getElementById('ttsNote'));
+  }
+
+  /* Read a prayer aloud: mode 'dev' | 'translit' | 'meaning'. Shared by the
+     prayer view and the Sadhana session runner. */
+  function speakPrayer(p, mode, rate, note) {
     if (!synth) {
-      document.getElementById('ttsNote').textContent = 'Audio narration is not supported in this browser.';
+      if (note) note.textContent = 'Audio narration is not supported in this browser.';
       return;
     }
     synth.cancel();
-    const mode = document.getElementById('ttsLang').value;
-    const rate = document.getElementById('ttsRate').value / 100;
-    const p = currentPrayer;
     let text, voicePref, langTag;
     if (mode === 'meaning') {
       text = p.stanzas.map(s => s.meaning).join(' ');
@@ -475,21 +382,22 @@
     }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = langTag;
-    u.rate = rate;
+    u.rate = rate || 0.88;
     u.pitch = 1;
     const v = pickVoice(voicePref, DEITY_VOICE_GENDER[p.deity]);
     if (v) u.voice = v;
-    const note = document.getElementById('ttsNote');
-    if (voicePref === 'hi' && v && !(v.lang || '').toLowerCase().startsWith('hi') && !(v.lang || '').toLowerCase().startsWith('sa')) {
-      note.textContent = 'No Hindi voice found on this device — falling back to an English voice. For best results open in Chrome or Edge, which ship Hindi voices.';
-    } else {
-      note.textContent = v ? ('Narrating with: ' + v.name) : '';
+    if (note) {
+      if (voicePref === 'hi' && v && !(v.lang || '').toLowerCase().startsWith('hi') && !(v.lang || '').toLowerCase().startsWith('sa')) {
+        note.textContent = 'No Hindi voice found on this device — falling back to an English voice. For best results open in Chrome or Edge, which ship Hindi voices.';
+      } else {
+        note.textContent = v ? ('Narrating with: ' + v.name) : '';
+      }
     }
     synth.speak(u);
   }
+  window.dhSpeak = { prayer: speakPrayer, stop: stopSpeech };
 
   /* ---------- guide chatbot (on-device, no keys) ---------- */
-  const fab = document.getElementById('chatFab');
   const panel = document.getElementById('chatPanel');
   const chatClose = document.getElementById('chatClose');
   const messages = document.getElementById('chatMessages');
@@ -498,32 +406,20 @@
   const input = document.getElementById('chatInput');
   let chatOpened = false;
 
-  /* folded-hands FAB now opens a small menu; the chat is one item in it */
-  const fabMenu = document.getElementById('fabMenu');
-  function closeFabMenu() { if (fabMenu) fabMenu.hidden = true; }
-  function openChat() {
-    closeFabMenu();
+  /* Opened from "Ask" inside Library search; no floating button any more. */
+  function openChat(prefill) {
     panel.hidden = false;
     if (!chatOpened) {
       chatOpened = true;
       botSay('नमस्ते 🙏 I am the Divine Guide. Ask me about any prayer here — its meaning, its deity, when it is sung — or about the deities themselves.');
       renderChips(CHAT_SUGGESTIONS);
     }
+    if (prefill) input.value = prefill;
     input.focus();
   }
-  fab.addEventListener('click', () => {
-    if (fabMenu) { fabMenu.hidden = !fabMenu.hidden; return; }
-    openChat();
-  });
-  document.getElementById('fabChat').addEventListener('click', openChat);
-  document.getElementById('fabGuides').addEventListener('click', () => { closeFabMenu(); window.dhOpenSheet('guidesSection'); });
-  document.getElementById('fabNearby').addEventListener('click', () => { closeFabMenu(); window.dhOpenSheet('nearbySection'); });
-  const japaFab = document.getElementById('japaFab');
-  if (japaFab) japaFab.addEventListener('click', () => window.dhOpenSheet('japaSection'));
-  document.addEventListener('click', (e) => {
-    if (fabMenu && !fabMenu.hidden && !fabMenu.contains(e.target) && e.target !== fab && !fab.contains(e.target)) closeFabMenu();
-  });
+  window.dhOpenChat = openChat;
   chatClose.addEventListener('click', () => { panel.hidden = true; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) panel.hidden = true; });
 
   /* ---------- Gemini key settings ---------- */
   const WORKER_URL = 'https://divine-guide.ankitsamriwal.workers.dev'; // set to the deployed Cloudflare worker origin, e.g. https://divine-guide.<subdomain>.workers.dev
@@ -607,7 +503,7 @@
     '- ' + t.name + ': ' + t.date).join('\n');
   const LIFE_EVENTS_TEXT = '\n\nWHICH PUJA FOR A LIFE EVENT (traditional recommendations):\n' + LIFE_EVENTS.map(e =>
     '- ' + e.event + ': ' + e.puja + ' (' + e.deity + '). ' + e.why + (e.note ? ' Note: ' + e.note : '')).join('\n');
-  const NEARBY_TEXT = '\n\nNEARBY: The app has a Nearby tab with map searches for temples, pandits for home puja, and flower/prasad shops, plus online pandit booking links (SmartPuja, PujariJi and similar). For "find a pandit" questions, point people there.';
+  const NEARBY_TEXT = '\n\nNEARBY: The app has a Find-a-temple page (Library) with map searches for temples, pandits for home puja, and flower/prasad shops, plus online pandit booking links (SmartPuja, PujariJi and similar). For "find a pandit" questions, point people there.';
 
   const SYSTEM_PROMPT_BASE = 'You are the Divine Guide inside "Divine Hub", a serene web app of traditional Hindu prayers. ' +
     'Answer with warmth, accuracy and reverence. Ground every answer in the corpus below. ' +
@@ -776,7 +672,7 @@
     for (const o of occasionMap) {
       if (o.words.some(w => qRaw.includes(w))) {
         const names = o.ids.map(id => PRAYERS.find(p => p.id === id)).filter(Boolean).map(p => '• ' + p.title + ' (' + p.titleDev + ')').join('\n');
-        return o.note + '\n' + names + '\n\nOpen any of them from the grid to read the full text, meaning, or listen aloud.';
+        return o.note + '\n' + names + '\n\nOpen any of them from the Library to read the full text, meaning, or listen aloud.';
       }
     }
 
@@ -805,7 +701,7 @@
       if (/(mean|meaning|arth|matlab)/.test(qRaw)) {
         out += '\n\nA taste of the meaning — ' + p.stanzas[0].meaning;
       }
-      out += '\n\nOpen "' + p.title + '" from the grid for the full text, transliteration, meaning and audio.';
+      out += '\n\nOpen "' + p.title + '" from the Library for the full text, transliteration, meaning and audio.';
       return out;
     }
 
@@ -838,11 +734,11 @@
       return n.length > 3 && qRaw.includes(n);
     });
     if (festHit && !prayerMentioned && !/(mean|meaning|arth|matlab|chalisa|aarti|stotra|mantra|ashtakam|vandana)/.test(qRaw)) {
-      return festHit.name + ' (' + festHit.dev + ') falls on ' + fmtFestivalDate(new Date(festHit.d2026 + 'T00:00:00')) + ' in 2026 and ' + fmtFestivalDate(new Date(festHit.d2027 + 'T00:00:00')) + ' in 2027.\n\n' + festHit.note + '\n\nSee the Festivals tab for the full calendar.';
+      return festHit.name + ' (' + festHit.dev + ') falls on ' + fmtFestivalDate(new Date(festHit.d2026 + 'T00:00:00')) + ' in 2026 and ' + fmtFestivalDate(new Date(festHit.d2027 + 'T00:00:00')) + ' in 2027.\n\n' + festHit.note + '\n\nSee the Calendar tab for the full calendar.';
     }
     if (/(festival|upcoming|next.*(festival|tyohar|tyohaar)|panchang|calendar|tyohar|tyohaar)/.test(qRaw)) {
       const up = festivalsUpcoming(new Date()).slice(0, 3);
-      return 'The next festivals on the calendar:\n' + up.map(r => '• ' + r.f.name + ' — ' + fmtFestivalDate(r.date)).join('\n') + '\n\nThe Festivals tab has the full verified 2026-2027 calendar.';
+      return 'The next festivals on the calendar:\n' + up.map(r => '• ' + r.f.name + ' — ' + fmtFestivalDate(r.date)).join('\n') + '\n\nThe Calendar tab has the full verified 2026-2027 calendar.';
     }
 
     // Why-database questions
@@ -850,14 +746,14 @@
       const hits = whyFind(qRaw);
       if (hits.length) {
         const it = hits[0];
-        return it.item + ' (' + it.dev + ')\n\n' + it.role + '\n\nTraditionally: ' + it.traditional + '\n\nPractically: ' + it.science + '\n\nThe Why Puja? tab has 58 such entries across seven categories.';
+        return it.item + ' (' + it.dev + ')\n\n' + it.role + '\n\nTraditionally: ' + it.traditional + '\n\nPractically: ' + it.science + '\n\nLibrary › Why is this used in puja? has 58 such entries across seven categories.';
       }
     }
 
     // Puja guide questions
     if (/(how to|how do|vidhi|samagri|checklist|griha pravesh|griha|housewarming|satyanarayan|sunderkand|sundarakhand|sthapana|diwali puja|lakshmi puja|ganesh puja|path|paath)/.test(qRaw)) {
       const g = PUJA_GUIDES.find(x => qRaw.includes(x.title.split(' ')[0].toLowerCase())) || PUJA_GUIDES[0];
-      return g.title + ' (' + g.dev + ') — ' + g.about + '\n\nWhen: ' + g.when + '\n\nThe full guide — ' + g.samagri.length + ' samagri items with quantities and ' + g.steps.length + ' steps — is in the Puja Guides tab.';
+      return g.title + ' (' + g.dev + ') — ' + g.about + '\n\nWhen: ' + g.when + '\n\nThe full guide — ' + g.samagri.length + ' samagri items with quantities and ' + g.steps.length + ' steps — is in Library › Puja guides.';
     }
 
     // Amavasya / Poornima tithi questions
@@ -865,13 +761,13 @@
       const n = tithiNext('Amavasya', new Date());
       return (n ? 'The next Amavasya is ' + n.name + ' on ' + fmtFestivalDate(new Date(n.date + 'T00:00:00')) + '.' : '') +
         '\n\nAmavasya is the new-moon day - the traditional time for Pitru Tarpan and shradh for ancestors, and for quiet japa and fasting. Sarva Pitru Amavasya (Mahalaya) is the most observed of the year.' +
-        '\n\nThe Festivals tab lists every Amavasya and Poornima of 2026-2027.';
+        '\n\nThe Calendar tab shows every Amavasya and Poornima.';
     }
     if (/(poornima|purnima|pooranmashi|pournami|full moon)/.test(qRaw)) {
       const n = tithiNext('Poornima', new Date());
       return (n ? 'The next Poornima is ' + n.name + ' on ' + fmtFestivalDate(new Date(n.date + 'T00:00:00')) + '.' : '') +
         '\n\nPoornima is the full-moon day - Satyanarayan puja is traditionally performed on it, and several great festivals (Guru Purnima, Sharad Purnima, Kartik Purnima) fall on full moons.' +
-        '\n\nThe Festivals tab has the full 2026-2027 tithi calendar.';
+        '\n\nThe Calendar tab has the tithi for every day.';
     }
 
     // Life-event puja recommendations
@@ -880,12 +776,12 @@
       const e = evHits[0];
       return 'For ' + e.event.toLowerCase() + ': ' + e.puja + ' - ' + e.deity + ' is invoked.\n\n' + e.why +
         (e.note ? '\n\n' + e.note : '') +
-        '\n\nFor the samagri and steps, see the Puja Guides tab; for a priest, see the Nearby tab.';
+        '\n\nFor the samagri and steps, see Library › Puja guides; for a priest, see Library › Find a temple or pandit.';
     }
 
     // Pandit / priest nearby
     if (/(pandit|panditji|pandit ji|purohit|pujari|priest|near me|nearby)/.test(qRaw)) {
-      return 'The Nearby tab has one-tap map searches for pandits for home puja, temples, and flower/prasad shops around you, plus online pandit-booking services (SmartPuja, PujariJi, and others) if you want a fixed-price package with samagri included.';
+      return 'Library › Find a temple or pandit has one-tap map searches for pandits for home puja, temples, and flower/prasad shops around you, plus online pandit-booking services (SmartPuja, PujariJi, and others) if you want a fixed-price package with samagri included.';
     }
 
     return botAnswerCore(q);

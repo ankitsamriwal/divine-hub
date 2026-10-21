@@ -272,6 +272,54 @@
 
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopListen(); });
 
+  /* ---------- API: preselect a mantra/round, embed in a session ---------- */
+  const layout = document.querySelector('#japaSection .japa-layout');
+  const home = layout ? layout.parentNode : null;
+  function preset(opts) {
+    opts = opts || {};
+    if (opts.value) {
+      let opt = Array.prototype.find.call(mantraSelect.options, o => o.value === opts.value);
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = opts.value;
+        opt.dataset.dev = opts.dev || '';
+        opt.textContent = (opts.label || opts.value) + (opts.dev ? ' — ' + opts.dev : '');
+        mantraSelect.insertBefore(opt, mantraSelect.querySelector('option[value="custom"]'));
+      }
+      mantraSelect.value = opts.value;
+      mantraSelect.dispatchEvent(new Event('change'));
+    }
+    if (opts.target) {
+      const n = Math.max(1, Math.min(1000, parseInt(opts.target, 10) || 108));
+      let matched = false;
+      document.querySelectorAll('.preset').forEach(x => {
+        const on = x.dataset.n === String(n);
+        x.classList.toggle('active', on);
+        if (on) matched = true;
+      });
+      if (!matched) {
+        const c = document.querySelector('.preset[data-n="custom"]');
+        if (c) c.classList.add('active');
+        customTarget.hidden = false;
+        customTarget.value = n;
+      } else {
+        customTarget.hidden = true;
+      }
+      target = n;
+    }
+    count = 0;
+    save();
+    drawMala();
+  }
+  window.dhJapa = {
+    preset: preset,
+    open: function (opts) { preset(opts); if (window.dhOpenSheet) window.dhOpenSheet('japaSection'); },
+    /* move the live counter into another container (the session runner) */
+    mount: function (el) { if (layout && el) { el.appendChild(layout); drawMala(); } },
+    unmount: function () { if (layout && home && layout.parentNode !== home) { home.appendChild(layout); } stopListen(); },
+    roundsToday: function () { return dayRecord().rounds; }
+  };
+
   /* ---------- init ---------- */
   target = state.target || 108;
   drawMala();
