@@ -97,7 +97,7 @@
 
   /* ---------- section ---------- */
   function render() {
-    const zone = document.getElementById('zoneSadhana');
+    const zone = document.getElementById('calAlmanac');
     if (!zone) { setTimeout(render, 400); return; }
     let sec = document.getElementById('almanacSection');
     if (!sec) {

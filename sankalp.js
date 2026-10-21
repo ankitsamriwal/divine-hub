@@ -702,7 +702,7 @@
     if (tl) tl.addEventListener('click', () => shareTimeline(g));
     wirePlusTeaser(body);
     body.querySelector('#skEnd').addEventListener('click', () => {
-      if (confirm('Let go of this sankalp? The streak will be lost.')) {
+      if (confirm('Let go of this sankalp? You can always begin a new one.')) {
         const st = load();
         st.goals = st.goals.filter(x => x.id !== g.id);
         save(st);
@@ -757,7 +757,7 @@
 
   /* ---------- home card ---------- */
   function renderHome() {
-    const zone = document.getElementById('zoneSadhana');
+    const zone = document.getElementById('sankalpSlot');
     if (!zone) { setTimeout(renderHome, 400); return; }
     let card = document.getElementById('sankalpHome');
     if (!card) {
@@ -765,10 +765,10 @@
       card.id = 'sankalpHome';
       card.className = 'sk-home';
       card.type = 'button';
-      const sandhya = document.getElementById('sandhyaSection');
-      zone.insertBefore(card, sandhya || null);
+      zone.appendChild(card);
       card.addEventListener('click', openSheet);
     }
+    try { document.dispatchEvent(new CustomEvent('dh-sankalp-change')); } catch (e) {}
     const s = load();
     const act = activeGoals(s);
     const comp = completedGoals(s);
@@ -795,17 +795,23 @@
     }
   }
 
-  function wireFab() {
-    const b = document.getElementById('fabSankalp');
-    if (b) b.addEventListener('click', () => {
-      const m = document.getElementById('fabMenu');
-      if (m) m.hidden = true;
-      openSheet();
-    });
-  }
-
   window.dhSankalp = {
     open: openSheet,
+    /* summary of the first active sankalp, for Today's Continue card */
+    active: function () {
+      const s = load();
+      const g = activeGoals(s)[0];
+      if (!g) return null;
+      const e = todayEntry(g);
+      const done = doneCount(g);
+      return {
+        id: g.id, text: g.text, duration: g.duration, scheduled: isScheduled(g), startISO: g.startISO,
+        day: Math.min(done + (e.done ? 0 : 1), g.duration), sealedToday: !!e.done,
+        taps: e.taps || 0, target: g.target || 108,
+        deity: g.deity, mantra: deityOf(g).mantra, mantraDev: deityOf(g).mantraDev
+      };
+    },
+    openGoal: function (id) { view = { name: 'goal', goalId: id }; sheetEl(); renderSheet(); window.dhOpenSheet('sankalpSheet'); },
     renderHome: renderHome,
     card: function () {
       const s = load();
@@ -820,6 +826,6 @@
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { renderHome(); wireFab(); });
-  } else { renderHome(); wireFab(); }
+    document.addEventListener('DOMContentLoaded', renderHome);
+  } else { renderHome(); }
 })();

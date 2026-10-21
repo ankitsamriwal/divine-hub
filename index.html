@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=49">
+<link rel="stylesheet" href="styles.css?v=50">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -47,59 +47,142 @@
   </div>
 </header>
 
-<div id="prayerSection">
-<section class="hero">
-  <div class="hero-om" aria-hidden="true">ॐ</div>
-  <h2>A quiet place for sacred sound</h2>
-  <p>Traditional aartis, chalisas, stotrams and mantras — with the original Devanagari, a gentle transliteration, the full meaning in English, and a voice to read them aloud.</p>
+<main id="tabPanels" class="tab-panels">
+
+<!-- ============ आज · Today ============ -->
+<section id="tab-today" class="tab-panel" role="tabpanel" aria-labelledby="navToday" tabindex="-1">
+  <div class="today-head">
+    <p class="today-date" id="todayDate"></p>
+    <label class="city-pick" for="todayCity"><span class="city-pick-lbl">शहर · City</span>
+      <select id="todayCity" aria-label="Your city"></select>
+    </label>
+  </div>
+  <section class="t-card t-panchang" id="todayPanchang" aria-label="Today's panchang"></section>
+  <section class="t-card t-ritual" id="todayRitual" aria-label="Today's ritual"></section>
+  <div id="todayNext"></div>
+  <div id="todayContinue"></div>
+  <div id="todayBanner"></div>
+  <button class="vod" id="verseOfDay" hidden aria-label="Open today's verse">
+    <span class="vod-label">आज का पाठ · Verse of the day</span>
+    <span class="vod-dev" id="vodDev"></span>
+    <span class="vod-translit" id="vodTranslit"></span>
+    <span class="vod-meaning" id="vodMeaning"></span>
+    <span class="vod-source" id="vodSource"></span>
+  </button>
+  <div id="todayPlus"></div>
 </section>
 
-<section class="zone" id="zoneSadhana" aria-label="Sadhana - daily practice">
-  <header class="zone-head">
-    <h2 class="zone-title">साधना · Sadhana</h2>
-    <p class="zone-sub">Today's practice, your streak, and the day's tithi.</p>
+<!-- ============ पंचांग · Calendar ============ -->
+<section id="tab-calendar" class="tab-panel" role="tabpanel" aria-labelledby="navCalendar" tabindex="-1" hidden>
+  <header class="tab-head">
+    <h2 class="tab-title"><span class="tab-title-dev">पंचांग</span> Calendar</h2>
+    <p class="tab-sub">Tithis, festivals and vrat days. Tap a date for its rituals; tap a festival for muhurat, puja and aarti.</p>
   </header>
+  <div class="cal-month panchang-sheet" id="panchangSection">
+    <div class="pk-nav">
+      <button id="pkPrev" class="pk-nav-btn" aria-label="Previous month">‹</button>
+      <span id="pkMonthLabel" class="pk-month-label"></span>
+      <button id="pkNext" class="pk-nav-btn" aria-label="Next month">›</button>
+    </div>
+    <div class="pk-book">
+      <div class="pk-page" id="pkPage"></div>
+    </div>
+    <div class="pk-legend">
+      <span>● Purnima</span><span>○ Amavasya</span><span>☾ Ekadashi</span><span>🪔 festival</span><span>🔔 reminder set</span>
+    </div>
+  </div>
+  <div class="cal-chips" id="calChips" role="group" aria-label="Filter the list">
+    <button type="button" class="cal-chip" data-f="festival" aria-pressed="false">🪔 Festivals</button>
+    <button type="button" class="cal-chip" data-f="vrat" aria-pressed="false">🌙 Vrat</button>
+    <button type="button" class="cal-chip" data-f="ekadashi" aria-pressed="false">☾ Ekadashi</button>
+    <button type="button" class="cal-chip" data-f="muhurat" aria-pressed="false">🕰️ Muhurat</button>
+  </div>
+  <div class="cal-list" id="calList" aria-live="polite"></div>
+  <div id="calDiwali"></div>
+
+  <section id="festivalsSection" class="info-section cal-section">
+    <h3 class="info-h3">उत्सव · Upcoming festivals</h3>
+    <p class="info-sub">Verified dates from Drik Panchang and national holiday calendars. Hindu festivals follow the lunar calendar; regional observance can differ by a day.</p>
+    <div id="festivalUpcoming" class="festival-upcoming"></div>
+    <button class="dg-head group-toggle" id="festTableToggle" type="button" aria-expanded="false" aria-controls="festTableWrap">
+      <span class="dg-name">Full calendar 2026-2027</span>
+      <span class="dg-count">19 festivals</span>
+      <span class="dg-caret" aria-hidden="true">›</span>
+    </button>
+    <div id="festTableWrap" hidden>
+      <div id="festivalTable" class="festival-table"></div>
+    </div>
+  </section>
+  <div id="calAlmanac"></div>
+</section>
+
+<!-- ============ साधना · Sadhana ============ -->
+<section id="tab-sadhana" class="tab-panel" role="tabpanel" aria-labelledby="navSadhana" tabindex="-1" hidden>
+  <header class="tab-head">
+    <h2 class="tab-title"><span class="tab-title-dev">साधना</span> Sadhana</h2>
+    <p class="tab-sub">A guided sitting: दीपक · आरती · जाप · प्रार्थना. Choose a deity and begin.</p>
+  </header>
+  <section class="t-card ss-start" id="sessionStart" aria-label="Guided session"></section>
+  <div class="sd-list" id="sadhanaList"></div>
   <section class="sandhya-section" id="sandhyaSection" aria-label="Sandhya Aarti - evening aarti">
     <div class="sy-card" id="syCard"></div>
   </section>
+  <div id="sankalpSlot"></div>
+  <div id="zoneSadhana"></div>
 </section>
 
-<section class="zone" id="zonePrayers" aria-label="Prayers">
-  <header class="zone-head">
-    <h2 class="zone-title">प्रार्थना · Prayers</h2>
-    <p class="zone-sub">A verse for today, then the full library.</p>
+<!-- ============ संग्रह · Library ============ -->
+<section id="tab-library" class="tab-panel" role="tabpanel" aria-labelledby="navLibrary" tabindex="-1" hidden>
+  <header class="tab-head">
+    <h2 class="tab-title"><span class="tab-title-dev">संग्रह</span> Library</h2>
+    <p class="tab-sub">Every aarti, chalisa, stotra and mantra, by deity.</p>
   </header>
-<button class="vod" id="verseOfDay" hidden aria-label="Open today's verse">
-  <span class="vod-label">आज का पाठ · Verse of the day</span>
-  <span class="vod-dev" id="vodDev"></span>
-  <span class="vod-translit" id="vodTranslit"></span>
-  <span class="vod-meaning" id="vodMeaning"></span>
-  <span class="vod-source" id="vodSource"></span>
-</button>
-
-<div class="prayers-tools">
-  <div class="header-search">
-    <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers">
+  <div class="lib-search" role="search">
+    <input id="searchInput" type="search" placeholder="Search prayers, deities, meanings…" aria-label="Search prayers" autocomplete="off">
+    <button type="button" id="libAsk" class="lib-ask" aria-label="Ask the Divine Guide">Ask</button>
   </div>
-<div class="deity-filter" id="deityFilter">
-  <button id="deityFilterBtn" class="deity-filter-btn" aria-haspopup="true" aria-expanded="false">
-    <span class="df-label" id="deityFilterLabel">All deities</span>
-    <span class="df-caret" aria-hidden="true">&#9662;</span>
+  <div class="lib-results" id="libResults" hidden>
+    <p class="lib-results-head" id="libResultsHead"></p>
+    <div id="prayerGrid" class="prayer-grid"></div>
+  </div>
+  <div id="libBrowse">
+    <h3 class="lib-h">देवता · Deity rooms</h3>
+    <div class="room-grid" id="roomGrid"></div>
+    <h3 class="lib-h">अध्ययन · Learn</h3>
+    <div class="learn-links" id="learnLinks"></div>
+    <section class="zone" id="zonePractice" aria-label="Journeys and quizzes"></section>
+    <section id="whySection" class="info-section">
+      <button class="dg-head group-toggle" id="whyToggle" type="button" aria-expanded="false" aria-controls="whyWrap">
+        <span class="dg-name dg-name-stack">पूजा सामग्री · Why is this used in puja?
+          <span class="dg-sub">the meaning behind the thali</span>
+        </span>
+        <span class="dg-caret" aria-hidden="true">›</span>
+      </button>
+      <div id="whyWrap" hidden>
+        <p class="info-sub">The purpose and reasoning — traditional, and where it exists, practical — behind the things on a puja thali.</p>
+        <input id="whySearch" class="why-search" type="search" placeholder="Search: camphor, tulsi, kalash, red thread…" aria-label="Search puja items">
+        <div id="whyList" class="why-list"></div>
+      </div>
+    </section>
+  </div>
+</section>
+
+</main>
+
+<nav class="bottom-nav" id="bottomNav" role="tablist" aria-label="Main">
+  <button type="button" class="bn-tab" id="navToday" role="tab" data-tab="today" aria-controls="tab-today" aria-selected="true">
+    <span class="bn-ic" aria-hidden="true">🪔</span><span class="bn-dev">आज</span><span class="bn-en">Today</span>
   </button>
-  <div class="deity-menu" id="deityMenu" role="menu" hidden></div>
-</div>
-
-</div>
-<main id="prayerGrid" class="prayer-grid"></main>
-</section>
-
-<section class="zone" id="zonePractice" aria-label="Practice - journeys, quizzes and puzzles">
-  <header class="zone-head">
-    <h2 class="zone-title">अभ्यास · Practice</h2>
-    <p class="zone-sub">Guided journeys, quizzes, and the daily puzzle.</p>
-  </header>
-</section>
-</div>
+  <button type="button" class="bn-tab" id="navCalendar" role="tab" data-tab="calendar" aria-controls="tab-calendar" aria-selected="false" tabindex="-1">
+    <span class="bn-ic" aria-hidden="true">🌙</span><span class="bn-dev">पंचांग</span><span class="bn-en">Calendar</span>
+  </button>
+  <button type="button" class="bn-tab" id="navSadhana" role="tab" data-tab="sadhana" aria-controls="tab-sadhana" aria-selected="false" tabindex="-1">
+    <span class="bn-ic" aria-hidden="true">📿</span><span class="bn-dev">साधना</span><span class="bn-en">Sadhana</span>
+  </button>
+  <button type="button" class="bn-tab" id="navLibrary" role="tab" data-tab="library" aria-controls="tab-library" aria-selected="false" tabindex="-1">
+    <span class="bn-ic" aria-hidden="true">📖</span><span class="bn-dev">संग्रह</span><span class="bn-en">Library</span>
+  </button>
+</nav>
 
 <section id="japaSection" class="japa-section dh-sheet" hidden>
   <button class="dh-sheet-close" id="japaClose" aria-label="Close japa counter">✕</button>
@@ -142,6 +225,7 @@
       <div class="japa-block">
         <span class="japa-label">Round length</span>
         <div class="preset-row">
+          <button class="preset" data-n="11">11</button>
           <button class="preset" data-n="21">21</button>
           <button class="preset active" data-n="108">108</button>
           <button class="preset" data-n="custom">Custom</button>
@@ -177,58 +261,11 @@
 </div>
 
 
-<section id="festivalsSection" class="info-section home-zone">
-  <h2 class="info-title">उत्सव · Festivals 2026-2027</h2>
-  <p class="info-sub">Verified dates from Drik Panchang and national holiday calendars. Hindu festivals follow the lunar calendar; regional observance can differ by a day.</p>
-  <h3 class="info-h3">Upcoming</h3>
-  <div id="festivalUpcoming" class="festival-upcoming"></div>
-  <button class="dg-head group-toggle" id="festTableToggle" type="button" aria-expanded="false">
-    <span class="dg-name">Full calendar 2026-2027</span>
-    <span class="dg-count">19 festivals</span>
-    <span class="dg-caret" aria-hidden="true">›</span>
-  </button>
-  <div id="festTableWrap" hidden>
-    <div id="festivalTable" class="festival-table"></div>
-  </div>
-  <script>
-  document.getElementById('festTableToggle').addEventListener('click', function () {
-    var w = document.getElementById('festTableWrap');
-    var open = w.hidden;
-    w.hidden = !open;
-    this.setAttribute('aria-expanded', open ? 'true' : 'false');
-    this.classList.toggle('open', open);
-  });
-  </script>
-</section>
-
 <section id="guidesSection" class="info-section dh-sheet" hidden>
   <button class="dh-sheet-close" id="guidesClose" aria-label="Close puja guides">✕</button>
   <h2 class="info-title">पूजा विधि · Puja Guides</h2>
   <p class="info-sub">Household-scale samagri lists with quantities and step outlines. Your family pandit's word always wins where traditions differ.</p>
   <div id="guideList" class="guide-list"></div>
-</section>
-
-<section id="whySection" class="info-section home-zone">
-  <button class="dg-head group-toggle" id="whyToggle" type="button" aria-expanded="false">
-    <span class="dg-name dg-name-stack">पूजा सामग्री · Why is this used in puja?
-      <span class="dg-sub">the meaning behind the thali</span>
-    </span>
-    <span class="dg-caret" aria-hidden="true">›</span>
-  </button>
-  <div id="whyWrap" hidden>
-    <p class="info-sub">The purpose and reasoning — traditional, and where it exists, practical — behind the things on a puja thali.</p>
-    <input id="whySearch" class="why-search" type="search" placeholder="Search: camphor, tulsi, kalash, red thread…" aria-label="Search puja items">
-    <div id="whyList" class="why-list"></div>
-  </div>
-  <script>
-  document.getElementById('whyToggle').addEventListener('click', function () {
-    var w = document.getElementById('whyWrap');
-    var open = w.hidden;
-    w.hidden = !open;
-    this.setAttribute('aria-expanded', open ? 'true' : 'false');
-    this.classList.toggle('open', open);
-  });
-  </script>
 </section>
 
 <section id="nearbySection" class="info-section dh-sheet" hidden>
@@ -249,48 +286,11 @@
   </div>
 </section>
 
-<section id="panchangSection" class="info-section dh-sheet panchang-sheet" hidden>
-  <button class="dh-sheet-close" id="panchangClose" aria-label="Close panchang">✕</button>
-  <div class="pk-ornament" aria-hidden="true"><span>✦</span><b>ॐ</b><span>✦</span></div>
-  <p class="pk-kicker">चन्द्र मास · SACRED LUNAR CALENDAR</p>
-  <h2 class="info-title">पंचांग · Panchang</h2>
-  <p class="info-sub">Tithis and festivals for the month. Tap a date for rituals and mantra jaap; tap its bell for a reminder.</p>
-  <div class="pk-nav">
-    <button id="pkPrev" class="pk-nav-btn" aria-label="Previous month">‹</button>
-    <span id="pkMonthLabel" class="pk-month-label"></span>
-    <button id="pkNext" class="pk-nav-btn" aria-label="Next month">›</button>
-  </div>
-  <div class="pk-book">
-    <div class="pk-page" id="pkPage"></div>
-  </div>
-  <div class="pk-legend">
-    <span>● Purnima</span><span>○ Amavasya</span><span>☾ Ekadashi</span><span>🪔 festival</span><span>🔔 reminder set</span>
-  </div>
-</section>
-
 <div id="pkCardOverlay" class="pk-card-overlay" hidden>
   <div class="pk-card" id="pkCard" role="dialog" aria-label="Tithi details"></div>
 </div>
 
-<div id="fabMenu" class="fab-menu" hidden>
-  <button class="fab-menu-item" id="fabChat"><span class="fmi-ic">🙏</span> Divine Guide</button>
-  <button class="fab-menu-item" id="fabPanchang"><span class="fmi-ic">🌙</span> Panchang</button>
-  <button class="fab-menu-item" id="fabMuhurat"><span class="fmi-ic">🕰️</span> City muhurat ✨</button>
-  <button class="fab-menu-item" id="fabDiwali"><span class="fmi-ic">🪔</span> Diwali guide</button>
-  <button class="fab-menu-item" id="fabSankalp"><span class="fmi-ic">🕉️</span> Sankalp</button>
-  <button class="fab-menu-item" id="fabGuides"><span class="fmi-ic">🪔</span> Puja Guides</button>
-  <button class="fab-menu-item" id="fabNearby"><span class="fmi-ic">📍</span> Nearby stores</button>
-</div>
-
-<button id="japaFab" class="chat-fab japa-fab" aria-label="Open the japa counter">
-  <span>📿</span>
-</button>
-
-<button id="chatFab" class="chat-fab" aria-label="Open the menu">
-  <span>🙏</span>
-</button>
-
-<div id="chatPanel" class="chat-panel" hidden>
+<div id="chatPanel" class="chat-panel" role="dialog" aria-label="Divine Guide" hidden>
   <div class="chat-header">
     <div>
       <strong>Divine Guide</strong>
@@ -320,7 +320,7 @@
 <footer class="site-footer">
   <button id="installBtn" class="install-btn" hidden>⤓ Install Divine Hub on this device</button>
   <p>These prayers are centuries-old traditional works in the public domain, compiled with care and reverence. Texts follow widely sung canonical versions; minor regional variations exist.</p>
-  <p class="footer-links"><a href="privacy.html">Privacy</a> · <a href="#plus">Sankalp+</a></p>
+  <p class="footer-links"><a href="privacy.html">Privacy</a></p>
   <p class="footer-om">॥ शान्तिः शान्तिः शान्तिः ॥</p>
 </footer>
 
@@ -342,21 +342,27 @@ if ('serviceWorker' in navigator) {
 <script src="guides.js?v=46"></script>
 <script src="why.js?v=46"></script>
 <script src="audio.js?v=49"></script>
-<script src="app.js?v=49"></script>
+<script src="app.js?v=50"></script>
 <script src="focus.js?v=46"></script>
-<script src="journeys.js?v=46"></script>
-<script src="sadhana.js?v=46"></script>
+<script src="journeys.js?v=50"></script>
+<script src="sadhana.js?v=50"></script>
 <script src="plus.js?v=48"></script>
-<script src="sankalp.js?v=46"></script>
+<script src="sankalp.js?v=50"></script>
 <script src="quizzes.js?v=46"></script>
-<script src="almanac.js?v=46"></script>
-<script src="sandhya.js?v=46"></script>
-<script src="japa.js?v=46"></script>
-<script src="panchang.js?v=46"></script>
+<script src="almanac.js?v=50"></script>
+<script src="sandhya.js?v=50"></script>
+<script src="japa.js?v=50"></script>
+<script src="panchang.js?v=50"></script>
 <script src="muhurat.js?v=47"></script>
-<script src="diwali.js?v=48"></script>
-<script src="sections.js?v=46"></script>
+<script src="diwali.js?v=50"></script>
+<script src="sections.js?v=50"></script>
 <script src="ambience.js?v=46"></script>
-<script src="backnav.js?v=46"></script>
+<script src="deities.js?v=50"></script>
+<script src="session.js?v=50"></script>
+<script src="calendar.js?v=50"></script>
+<script src="library.js?v=50"></script>
+<script src="today.js?v=50"></script>
+<script src="shell.js?v=50"></script>
+<script src="backnav.js?v=50"></script>
 </body>
 </html>

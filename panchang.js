@@ -505,6 +505,7 @@
     if (prev) prev.disabled = (y === MIN_VIEW.y && m === MIN_VIEW.m);
     if (next) next.disabled = (y === MAX_VIEW.y && m === MAX_VIEW.m);
     bindCells();
+    try { document.dispatchEvent(new CustomEvent('dh-month', { detail: { y: y, m: m } })); } catch (e) {}
   }
 
   function flip(dir) {
@@ -590,7 +591,9 @@
     html += '<div class="pk-card-tithi">' + (g ? g.glyph + ' ' : '') + esc(tName) + ' <span class="pk-card-dev">' + esc((t.paksha === 'Shukla' ? 'शुक्ल ' : 'कृष्ण ') + (TITHI_DEV[t.name] || '')) + '</span></div>';
     html += '<div class="pk-card-deity">' + esc(g ? g.deity : '—') + '</div>';
     if (fests.length) {
-      html += '<div class="pk-card-fest">🪔 ' + fests.map(function (f) { return esc(f.name) + ' <span class="pk-card-fest-dev">' + esc(f.dev) + '</span>'; }).join(' · ') + '</div>';
+      html += '<div class="pk-card-fest">🪔 ' + fests.map(function (f) {
+        return '<button type="button" class="pk-card-festbtn" data-fest="' + esc(f.name) + '">' + esc(f.name) + ' <span class="pk-card-fest-dev">' + esc(f.dev) + '</span> ›</button>';
+      }).join(' ') + '</div>';
     }
     html += '<p class="pk-card-about">' + esc(g ? g.about : 'A day of the ' + t.paksha + ' paksha.') + '</p>';
 
@@ -622,6 +625,12 @@
     card.scrollTop = 0;
     paintBells();
     document.getElementById('pkCardClose').addEventListener('click', closeCard);
+    card.querySelectorAll('.pk-card-festbtn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        closeCard();
+        if (window.dhFestival) window.dhFestival.open(b.dataset.fest, iso);
+      });
+    });
     document.getElementById('pkCardBell').addEventListener('click', function () {
       toggleReminder(iso, t.name, t.paksha, null);
     });
@@ -633,33 +642,23 @@
     if (overlay) overlay.hidden = true;
   }
 
-  /* ---------- sheet wiring ---------- */
+  /* ---------- calendar tab wiring (the panchang lives in the Calendar tab now) ---------- */
   function openPanchang() {
-    var menu = document.getElementById('fabMenu');
-    if (menu) menu.hidden = true;
-    var sheet = document.getElementById('panchangSection');
-    if (!sheet) return;
-    if (sheet.hidden) {
-      /* reset to running month each fresh open */
-      var n = new Date();
-      view = { y: n.getFullYear(), m: n.getMonth() };
-      renderMonth(view.y, view.m);
-    }
-    window.dhOpenSheet('panchangSection');
+    var n = new Date();
+    view = { y: n.getFullYear(), m: n.getMonth() };
+    renderMonth(view.y, view.m);
+    if (window.dhTab) window.dhTab('calendar');
+  }
+  function showMonth(y, m) {
+    view = { y: y, m: m };
+    renderMonth(y, m);
   }
 
   function init() {
-    var btn = document.getElementById('fabPanchang');
-    if (btn) btn.addEventListener('click', openPanchang);
     var prev = document.getElementById('pkPrev');
     var next = document.getElementById('pkNext');
     if (prev) prev.addEventListener('click', function () { flip(-1); });
     if (next) next.addEventListener('click', function () { flip(1); });
-    var close = document.getElementById('panchangClose');
-    if (close) close.addEventListener('click', function () {
-      closeCard();
-      window.dhCloseSheet('panchangSection');
-    });
     renderMonth(view.y, view.m);
 
     /* local fallback: surface a due reminder when the app is open */
@@ -668,14 +667,14 @@
     if (due.length) {
       var r = due[0];
       setTimeout(function () {
-        toast('🌙 Today is ' + r.paksha + ' ' + r.tithi + ' — your reminder. Open the Panchang for today\u2019s rituals.');
+        toast('🌙 Today is ' + r.paksha + ' ' + r.tithi + ' — your reminder. Open the Calendar for today\u2019s rituals.');
       }, 2500);
     }
   }
 
   window.dhPanchang = {
     tithiAt: tithiAt, tithiInfo: tithiInfo, monthData: monthData,
-    tithiTimeline: tithiTimeline, open: openPanchang, _flip: flip, _view: function () { return view; },
+    tithiTimeline: tithiTimeline, open: openPanchang, showMonth: showMonth, cardGuide: cardGuide, _flip: flip, _view: function () { return view; },
     _renderMonth: renderMonth, _openCard: openCard, _toggleReminder: toggleReminder,
     _loadReminders: loadReminders, _cardGuide: cardGuide
   };

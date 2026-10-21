@@ -36,7 +36,7 @@
   }
 
   /* ---------- Diwali guide ---------- */
-  function diwaliHtml(city) {
+  function diwaliHtml(city, noPlus) {
     var x = M.diwali(city);
     var g = (typeof PUJA_GUIDES !== 'undefined') ? PUJA_GUIDES.find(function (p) { return p.id === 'lakshmi-puja-diwali'; }) : null;
     var h = '<div class="pk-ornament" aria-hidden="true"><span>✦</span><b>🪔</b><span>✦</span></div>' +
@@ -68,7 +68,7 @@
         '<details class="why-item"><summary>Samagri (' + g.samagri.length + ' items)</summary><ul class="samagri-list">' +
         g.samagri.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></details>';
     }
-    h += '<div class="dw-plus">' + (plus()
+    if (!noPlus) h += '<div class="dw-plus">' + (plus()
       ? '<b>✨ Plus:</b> open <button class="plus-link" id="dwDaily">daily muhurat</button> for Dhanteras, Govardhan and Bhai Dooj in your city, or <button class="plus-link" id="dwIcs">add all festivals to your calendar</button>.'
       : '<b>✨ Sankalp+</b> gives you this for every day of the year: Brahma muhurta, Abhijit, Rahu kaal and Pradosh for your city, plus festival alerts in your phone calendar. ' + plusButton()) +
       '</div>';
@@ -87,12 +87,14 @@
     return (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') ? (C.PRICE_MONTHLY_INR || '₹99') + '/mo' : (C.PRICE_MONTHLY_USD || '$1.99') + '/mo';
   }
 
-  function openDiwali() {
+  /* opts.noPlus: opened from the Calendar tab, where no Plus entry is shown */
+  function openDiwali(opts) {
+    var noPlus = !!(opts && opts.noPlus);
     var el = sheet('diwaliSheet', 'Diwali guide');
     var body = el.querySelector('#diwaliSheetBody');
     function paint() {
       var city = M.getCity();
-      body.innerHTML = diwaliHtml(city);
+      body.innerHTML = diwaliHtml(city, noPlus);
       body.querySelector('#dwCity').addEventListener('change', function (e) { M.setCity(e.target.value); paint(); });
       function prayer(id) { window.dhCloseSheet('diwaliSheet'); if (window.dhOpenPrayer) window.dhOpenPrayer(id); }
       body.querySelector('#dwAarti').addEventListener('click', function () { prayer('om-jai-lakshmi-mata'); });
@@ -160,7 +162,7 @@
   function banner() {
     if (Date.now() > BANNER_UNTIL) return;
     try { if (localStorage.getItem(LS_BANNER) === 'x') return; } catch (e) {}
-    var host = document.getElementById('zoneSadhana');
+    var host = document.getElementById('todayBanner');
     if (!host || document.getElementById('dwBanner')) return;
     var t = M.cityToday(M.getCity());
     var days = Math.round((Date.UTC(2026, 10, 8) - Date.UTC(t.y, t.m, t.d)) / 86400000);
@@ -173,8 +175,8 @@
       (window.dhPlus && window.dhPlus.canStartTrial && window.dhPlus.canStartTrial()
         ? '<button class="dw-banner-trial" id="dwBannerTrial">Start 7-day free trial</button>' : '') +
       '<button class="dw-banner-x" id="dwBannerX" aria-label="Hide Diwali banner">✕</button>';
-    host.insertBefore(b, host.querySelector('.zone-head') ? host.querySelector('.zone-head').nextSibling : host.firstChild);
-    b.querySelector('#dwBannerGo').addEventListener('click', openDiwali);
+    host.appendChild(b);
+    b.querySelector('#dwBannerGo').addEventListener('click', function () { openDiwali(); });
     var tb = b.querySelector('#dwBannerTrial');
     if (tb) tb.addEventListener('click', function () {
       tb.disabled = true; tb.textContent = 'Starting…';
@@ -183,17 +185,10 @@
     b.querySelector('#dwBannerX').addEventListener('click', function () { try { localStorage.setItem(LS_BANNER, 'x'); } catch (e) {} b.remove(); });
   }
 
-  function wireFab() {
-    var b = document.getElementById('fabMuhurat');
-    if (b) b.addEventListener('click', function () { var m = document.getElementById('fabMenu'); if (m) m.hidden = true; plus() ? openMuhurat() : openPlus(); });
-    var d = document.getElementById('fabDiwali');
-    if (d) d.addEventListener('click', function () { var m = document.getElementById('fabMenu'); if (m) m.hidden = true; openDiwali(); });
-  }
-
-  window.dhMuhuratUI = { open: openMuhurat, openDiwali: openDiwali };
+  window.dhMuhuratUI = { open: openMuhurat, openDiwali: openDiwali, bannerLive: function () { return Date.now() <= BANNER_UNTIL; } };
 
   function init() {
-    banner(); wireFab();
+    banner();
     if (window.dhPlus && window.dhPlus.pollPending) window.dhPlus.pollPending();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
