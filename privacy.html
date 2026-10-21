@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy · Divine Hub</title>
+<meta name="description" content="What Divine Hub stores, where it is stored, and how to delete it.">
+<meta name="theme-color" content="#140f0b">
+<style>
+  :root { --ink:#140f0b; --ink-2:#1e1610; --gold:#e2a94e; --cream:#f4e9d6; --cream-dim:#cbb99e; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ink); color:var(--cream); font:16px/1.65 'Space Grotesk', system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 2rem 16px 4rem; }
+  h1 { color: var(--gold); font-size: 1.7rem; margin: 0 0 .3rem; }
+  h2 { color: var(--gold); font-size: 1.1rem; margin: 2rem 0 .5rem; }
+  p, li { color: var(--cream-dim); }
+  b { color: var(--cream); }
+  a { color: var(--gold); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: .5rem .4rem; border-bottom: 1px solid rgba(226,169,78,.18); }
+  th { color: var(--cream); font-weight: 600; }
+  td { color: var(--cream-dim); }
+  code { font-family: 'Space Mono', monospace; font-size: .82em; color: var(--cream); word-break: break-all; }
+  .card { background: var(--ink-2); border: 1px solid rgba(226,169,78,.2); border-radius: 14px; padding: 1rem; }
+  button { background: var(--gold); color: var(--ink); border: none; border-radius: 10px; padding: .7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← Back to Divine Hub</a></p>
+  <h1>Privacy</h1>
+  <p>Last updated 21 October 2026. Divine Hub has no accounts and no ad or analytics trackers. Almost everything stays in your own browser.</p>
+
+  <h2>Stored only on your device</h2>
+  <div class="wrap"><table>
+    <tr><th>What</th><th>Where (browser storage key)</th></tr>
+    <tr><td>Japa counts, streaks, rounds</td><td><code>divinehub_japa_v1</code></td></tr>
+    <tr><td>Sankalp goals and journal entries</td><td><code>divinehub_sankalp_v2</code> (older: <code>divinehub_sankalp_v1</code>)</td></tr>
+    <tr><td>Journeys, sadhana, quizzes, almanac, reading position</td><td><code>divinehub_journeys_v1</code>, <code>divinehub_sadhana_v1</code>, <code>divinehub_quiz_v1</code>, <code>divinehub_almanac_v1</code>, <code>divinehub_focus_v1</code></td></tr>
+    <tr><td>Favourites, ambience and banner preferences, chosen city</td><td><code>dh_favs_v1</code>, <code>divinehub_ambience_v1</code>, <code>divinehub_diwali_banner_v1</code>, <code>divinehub_city_v1</code></td></tr>
+    <tr><td>Your own Gemini API key, if you add one</td><td><code>divinehub_gemini_key</code></td></tr>
+    <tr><td>Sankalp+ status: a signed entitlement token, its expiry, a random restore key and request ID</td><td><code>divinehub_plus_v1</code></td></tr>
+    <tr><td>Offline copy of the app</td><td>Service-worker cache</td></tr>
+  </table></div>
+
+  <h2>Sent to our server (a Cloudflare Worker)</h2>
+  <ul>
+    <li><b>Divine Guide questions</b>, when you use the guide without your own key: the question and recent chat turns go to the worker, which forwards them to Google Gemini for an answer. They are not stored by us.</li>
+    <li><b>Panchang reminders</b>, if you turn on a reminder bell: a push subscription (a browser-generated address, no name or email) and the reminder dates are kept so the reminder can be sent.</li>
+    <li><b>Sankalp+</b>: a random 32-character key (not linked to your name) and your plan and expiry date, so a payment can be matched to this device. The token in your browser is signed by the server and checked about once a day.</li>
+  </ul>
+  <p>City muhurat, the Diwali guide and festival calendar files are computed in your browser. Location for "Nearby stores" is used only in your browser to build a map link.</p>
+
+  <h2>Payments</h2>
+  <p>Sankalp+ checkout is handled by <b>Stripe</b> (outside India) or <b>Razorpay</b> (India) on their own pages. Card and bank details go only to them, under their privacy policies; Divine Hub never sees them. We receive a confirmation that a payment for your random key succeeded, with plan and amount. Your email may be visible to us in the provider's dashboard if the provider collects it for your receipt.</p>
+  <p>If you ask for access by email, we see your email address and request ID, used only to reply.</p>
+
+  <h2>How to delete your data</h2>
+  <div class="card">
+    <p><b>On this device:</b> the button below clears every Divine Hub key from this browser and its offline cache. You can also use your browser's "clear site data". Note that this removes Sankalp+ from this device too; keep your restore key first if you are a subscriber (Sankalp+ sheet, "Use Plus on another device").</p>
+    <button id="wipe" type="button">Delete my Divine Hub data on this device</button>
+    <p id="wipeMsg" role="status"></p>
+  </div>
+  <p><b>On our server:</b> reminder subscriptions are removed automatically once reminders fire or the browser unsubscribes. To delete Sankalp+ records, or anything else, email <a href="mailto:ankitsamriwal@gmail.com?subject=Divine%20Hub%20data%20deletion">ankitsamriwal@gmail.com</a> with your restore key or request ID. To cancel a subscription, use the link in your Stripe or Razorpay receipt.</p>
+</main>
+<script>
+document.getElementById('wipe').addEventListener('click', function () {
+  if (!confirm('Delete all Divine Hub data stored in this browser? This cannot be undone.')) return;
+  var n = 0;
+  try {
+    Object.keys(localStorage).forEach(function (k) { if (/^(divinehub_|dh_)/.test(k)) { localStorage.removeItem(k); n++; } });
+  } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  var done = function () { document.getElementById('wipeMsg').textContent = 'Removed ' + n + ' stored item' + (n === 1 ? '' : 's') + ' and the offline cache.'; };
+  if (window.caches && caches.keys) {
+    caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('divine-hub') === 0; }).map(function (k) { return caches.delete(k); })); }).then(done, done);
+  } else { done(); }
+});
+</script>
+</body>
+</html>
