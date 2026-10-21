@@ -270,9 +270,9 @@
       <div class="listen-bar">
         <span class="listen-label">Listen</span>
         <select id="ttsLang" aria-label="Narration language">
-          <option value="dev">${langLabel} (original text)</option>
-          <option value="translit">Transliteration (sounds like the original)</option>
-          <option value="meaning">English (the meaning)</option>
+          <option value="dev">${langLabel}</option>
+          <option value="translit">Transliteration</option>
+          <option value="meaning">English meaning</option>
         </select>
         <button id="ttsPlay">▶ Play</button>
         <button id="ttsStop" class="stop">■ Stop</button>

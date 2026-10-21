@@ -373,6 +373,9 @@ body {
 
 /* listen bar */
 .listen-bar {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -393,6 +396,10 @@ body {
 }
 
 .listen-bar select {
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
   background: var(--ink-2);
   color: var(--cream);
   border: 1px solid var(--gold-dim);
@@ -962,6 +969,7 @@ body {
 /* ---------- prayer view actions ---------- */
 .pv-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin: 0 0 1.2rem;
 }
@@ -970,6 +978,7 @@ body {
   font-size: 0.78rem;
   letter-spacing: 0.06em;
   padding: 0.5rem 1.1rem;
+  white-space: nowrap;
   border-radius: 999px;
   border: 1px solid var(--gold-dim);
   background: transparent;
@@ -2823,4 +2832,11 @@ body {
 @media (max-width: 480px) {
   .dw-banner { flex-wrap: wrap; }
   .dw-banner-trial { margin: 0 0.9rem 0.8rem; flex: 1 0 calc(100% - 1.8rem); order: 3; }
+}
+
+/* phone: keep the prayer actions and listen bar inside the card */
+@media (max-width: 480px) {
+  .pv-action { padding: 0.45rem 0.8rem; font-size: 0.74rem; letter-spacing: 0.03em; }
+  .listen-bar { padding: 0.8rem; }
+  .listen-bar select { flex-basis: 100%; }
 }
