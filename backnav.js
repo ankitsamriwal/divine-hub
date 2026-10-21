@@ -14,19 +14,25 @@
     journeyView: function () { return clickById('jvClose') || backdrop('journeyView'); },
     quizView: function () { return backdrop('quizView'); },
     diyaCelebration: function () { return clickById('dcClose'); },
+    pkCardOverlay: function () { return clickById('pkCardClose') || backdrop('pkCardOverlay'); },
     japaSection: function () { return clickById('japaClose'); },
     sankalpSheet: function () { return clickById('sankalpClose'); },
     guidesSection: function () { return clickById('guidesClose'); },
     nearbySection: function () { return clickById('nearbyClose'); },
-    sandhyaView: function () { return clickById('syvX') || clickById('syExit'); },
-    fabMenu: function () { var m = document.getElementById('fabMenu'); if (m) { m.hidden = true; return true; } return false; }
+    plusSheet: function () { return clickById('plusClose'); },
+    diwaliSheet: function () { return clickById('diwaliSheetClose'); },
+    muhuratSheet: function () { return clickById('muhuratSheetClose'); },
+    festSheet: function () { return clickById('festSheetClose'); },
+    roomSheet: function () { return clickById('roomClose'); },
+    sessionView: function () { return clickById('sessionClose'); },
+    sandhyaView: function () { return clickById('syvX') || clickById('syExit'); }
   };
-  var SECTION_IDS = ['prayerSection'];
+  /* bottom-nav tabs: Back steps through tabs visited, then exits at Today */
+  var SECTION_IDS = ['tab-today', 'tab-calendar', 'tab-sadhana', 'tab-library'];
   var SECTION_TABS = {
-    prayerSection: 'tabPrayers', japaSection: 'tabJapa', festivalsSection: 'tabFestivals',
-    guidesSection: 'tabGuides', whySection: 'tabWhy', nearbySection: 'tabNearby'
+    'tab-today': 'navToday', 'tab-calendar': 'navCalendar', 'tab-sadhana': 'navSadhana', 'tab-library': 'navLibrary'
   };
-  var BASE_SECTION = 'prayerSection';
+  var BASE_SECTION = 'tab-today';
 
   function clickById(id) {
     var b = document.getElementById(id);
@@ -141,5 +147,7 @@
   }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
 
   lastSection = currentSection();
+  /* the shell picks the starting tab on DOMContentLoaded (after this file loads) */
+  document.addEventListener('DOMContentLoaded', function () { lastSection = currentSection(); });
   queueSync(); /* catch deep-linked overlays opened on load */
 })();

@@ -383,6 +383,11 @@
     view.querySelector('#syDone').addEventListener('click', closeFlow);
   }
 
+  window.dhSandhya = {
+    open: function () { if (!view) buildView(); openFlow(!gateOpen()); },
+    isOpen: gateOpen
+  };
+
   /* ---------- init ---------- */
   function init() {
     if (!document.getElementById('syCard')) return;

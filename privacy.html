@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy · Divine Hub</title>
+<meta name="description" content="What Divine Hub stores, where it is stored, and how to delete it.">
+<meta name="theme-color" content="#140f0b">
+<style>
+  :root { --ink:#140f0b; --ink-2:#1e1610; --gold:#e2a94e; --cream:#f4e9d6; --cream-dim:#cbb99e; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ink); color:var(--cream); font:16px/1.65 'Space Grotesk', system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 2rem 16px 4rem; }
+  h1 { color: var(--gold); font-size: 1.7rem; margin: 0 0 .3rem; }
+  h2 { color: var(--gold); font-size: 1.1rem; margin: 2rem 0 .5rem; }
+  p, li { color: var(--cream-dim); }
+  b { color: var(--cream); }
+  a { color: var(--gold); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: .5rem .4rem; border-bottom: 1px solid rgba(226,169,78,.18); }
+  th { color: var(--cream); font-weight: 600; }
+  td { color: var(--cream-dim); }
+  code { font-family: 'Space Mono', monospace; font-size: .82em; color: var(--cream); word-break: break-all; }
+  .card { background: var(--ink-2); border: 1px solid rgba(226,169,78,.2); border-radius: 14px; padding: 1rem; }
+  button { background: var(--gold); color: var(--ink); border: none; border-radius: 10px; padding: .7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← Back to Divine Hub</a></p>
+  <h1>Privacy</h1>
+  <p>Last updated 21 October 2026. Divine Hub has no accounts and no ad or analytics trackers. Almost everything stays in your own browser.</p>
+
+  <h2>Stored only on your device</h2>
+  <div class="wrap"><table>
+    <tr><th>What</th><th>Where (browser storage key)</th></tr>
+    <tr><td>Japa counts, streaks, rounds</td><td><code>divinehub_japa_v1</code></td></tr>
+    <tr><td>Sankalp goals and journal entries</td><td><code>divinehub_sankalp_v2</code> (older: <code>divinehub_sankalp_v1</code>)</td></tr>
+    <tr><td>Journeys, sadhana, quizzes, almanac, reading position</td><td><code>divinehub_journeys_v1</code>, <code>divinehub_sadhana_v1</code>, <code>divinehub_quiz_v1</code>, <code>divinehub_almanac_v1</code>, <code>divinehub_focus_v1</code></td></tr>
+    <tr><td>Favourites, ambience and banner preferences, chosen city</td><td><code>dh_favs_v1</code>, <code>divinehub_ambience_v1</code>, <code>divinehub_diwali_banner_v1</code>, <code>divinehub_city_v1</code></td></tr>
+    <tr><td>Your own Gemini API key, if you add one</td><td><code>divinehub_gemini_key</code></td></tr>
+    <tr><td>Sankalp+ status: a signed trial or entitlement token and its expiry, a random device ID for the free trial, whether you have answered the trial-end question (not your answer), a random restore key and request ID</td><td><code>divinehub_plus_v1</code></td></tr>
+    <tr><td>A copy of the same random trial device ID, so that clearing local storage alone does not start a new trial</td><td>IndexedDB database <code>divinehub_device_v1</code></td></tr>
+    <tr><td>Offline copy of the app</td><td>Service-worker cache</td></tr>
+  </table></div>
+
+  <h2>Sent to our server (a Cloudflare Worker)</h2>
+  <ul>
+    <li><b>Divine Guide questions</b>, when you use the guide without your own key: the question and recent chat turns go to the worker, which forwards them to Google Gemini for an answer. They are not stored by us.</li>
+    <li><b>Panchang reminders</b>, if you turn on a reminder bell: a push subscription (a browser-generated address, no name or email) and the reminder dates are kept so the reminder can be sent.</li>
+    <li><b>Sankalp+ free trial</b>: when you start the 7-day trial, the app sends a random 32-character device ID that it made up (not linked to your name, phone or account). The server does <b>not</b> store that ID. It stores a one-way hash of it with the trial's start date, end date and whether the one-time 7-day extension was used, so each device gets one trial. This record is kept for about 13 months and then deleted automatically. The token in your browser is signed by the server and checked about once a day.</li>
+    <li><b>Trial-end question</b>: if you answer "Would you pay for this?", your answer is added to anonymous totals, counted by your browser's language setting (for example <code>en-IN</code>), your country (worked out by Cloudflare from the connection, stored as a two-letter code only) and the city you chose in the app (from the app's city list). <b>Your email, name, IP address and device ID are never stored with an answer</b>, and answers are not kept as individual records or with a time. Separately, your device's hashed trial record notes that the one-time extension was used; it does not record what you answered.</li>
+    <li><b>Redeem codes</b>, if someone gives you one: a random 32-character key (not linked to your name) with the plan and expiry date.</li>
+  </ul>
+  <p>Like any website, our hosting providers (Vercel and Cloudflare) see your IP address when you connect. We do not store it; a short-lived in-memory counter used to limit abuse is discarded within minutes.</p>
+  <p>City muhurat, the Diwali guide and festival calendar files are computed in your browser. Location for "Nearby stores" is used only in your browser to build a map link.</p>
+
+  <h2>Sung versions (YouTube)</h2>
+  <p>Some prayers offer a sung version from the official channel on YouTube. Nothing loads from YouTube until you tap play. When you do, the video plays through YouTube's privacy-enhanced player (youtube-nocookie.com), and YouTube's own privacy policy applies to that playback. We do not send your data to YouTube.</p>
+
+  <h2>Payments</h2>
+  <p><b>Divine Hub takes no payments.</b> Sankalp+ is offered as a free trial; no card or bank details are requested, and nothing is charged when the trial ends. If paid plans are introduced later, this page will be updated first, and checkout would be handled by the payment provider on its own pages.</p>
+  <p>If you email us, we see your email address and request ID, used only to reply.</p>
+
+  <h2>How to delete your data</h2>
+  <div class="card">
+    <p><b>On this device:</b> the button below clears every Divine Hub key from this browser and its offline cache. You can also use your browser's "clear site data". Note that this removes Sankalp+ from this device too, including the trial device ID in IndexedDB.</p>
+    <button id="wipe" type="button">Delete my Divine Hub data on this device</button>
+    <p id="wipeMsg" role="status"></p>
+  </div>
+  <p><b>On our server:</b> reminder subscriptions are removed automatically once reminders fire or the browser unsubscribes. Trial records are deleted automatically after about 13 months. Anonymous answer totals cannot be traced back to you, so there is nothing personal to delete. To delete a trial record sooner, or anything else, email <a href="mailto:ankitsamriwal@gmail.com?subject=Divine%20Hub%20data%20deletion">ankitsamriwal@gmail.com</a> with your request ID (shown on the Sankalp+ sheet).</p>
+</main>
+<script>
+document.getElementById('wipe').addEventListener('click', function () {
+  if (!confirm('Delete all Divine Hub data stored in this browser? This cannot be undone.')) return;
+  var n = 0;
+  try {
+    Object.keys(localStorage).forEach(function (k) { if (/^(divinehub_|dh_)/.test(k)) { localStorage.removeItem(k); n++; } });
+  } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  try { if (window.indexedDB) { indexedDB.deleteDatabase('divinehub_device_v1'); n++; } } catch (e) {}
+  var done = function () { document.getElementById('wipeMsg').textContent = 'Removed ' + n + ' stored item' + (n === 1 ? '' : 's') + ' and the offline cache.'; };
+  if (window.caches && caches.keys) {
+    caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('divine-hub') === 0; }).map(function (k) { return caches.delete(k); })); }).then(done, done);
+  } else { done(); }
+});
+</script>
+</body>
+</html>

@@ -1,23 +1,10 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v46';
+const CACHE = 'divine-hub-v50';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=46',
-  './backnav.js?v=46',
-  './app.js?v=46',
-  './focus.js?v=46',
-  './journeys.js?v=46',
-  './sadhana.js?v=46',
-  './plus.js?v=46',
-  './sankalp.js?v=46',
-  './quizzes.js?v=46',
-  './almanac.js?v=46',
-  './panchang.js?v=46',
-  './sandhya.js?v=46',
-  './ambience.js?v=46',
-  './assets/bells.mp3',
-  './assets/hanuman-aarti.mp3',
+  './styles.css?v=50',
+  './config.js?v=48',
   './data.js?v=46',
   './data2.js?v=46',
   './data3.js?v=46',
@@ -29,8 +16,32 @@ const CORE = [
   './festivals.js?v=46',
   './guides.js?v=46',
   './why.js?v=46',
-  './japa.js?v=46',
-  './sections.js?v=46',
+  './audio.js?v=49',
+  './app.js?v=50',
+  './focus.js?v=46',
+  './journeys.js?v=50',
+  './sadhana.js?v=50',
+  './plus.js?v=48',
+  './sankalp.js?v=50',
+  './quizzes.js?v=46',
+  './almanac.js?v=50',
+  './sandhya.js?v=50',
+  './japa.js?v=50',
+  './panchang.js?v=50',
+  './muhurat.js?v=47',
+  './diwali.js?v=50',
+  './sections.js?v=50',
+  './ambience.js?v=46',
+  './deities.js?v=50',
+  './session.js?v=50',
+  './calendar.js?v=50',
+  './library.js?v=50',
+  './today.js?v=50',
+  './shell.js?v=50',
+  './backnav.js?v=50',
+  './privacy.html',
+  './assets/bells.mp3',
+  './assets/hanuman-aarti.mp3',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -52,7 +63,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  if (url.hostname === 'divine-guide.ankitsamriwal.workers.dev') return; // guide API: always live
+  if (url.hostname === 'divine-guide.ankitsamriwal.workers.dev') return; // guide + Plus API: always live
+  if (/\.(apk|zip)$/i.test(url.pathname)) return; // never cache downloads
 
   // navigations: network first, fall back to cached shell when offline
   if (e.request.mode === 'navigate') {

@@ -1,0 +1,7 @@
+# Keep unrelated build artifacts out of the public site (roadtodivinity.vercel.app).
+# Files stay in git; they are only excluded from the Vercel deployment.
+assets/*.apk
+assets/*.zip
+worker/
+docs/
+.github/

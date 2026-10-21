@@ -4,9 +4,13 @@
   'use strict';
 
   /* ---------- sheet overlays (japa, guides, nearby) ---------- */
+  /* Sheets stack in the order they open (a japa sheet opened from a deity
+     room must sit above the room), so each one gets the next z-index. */
   window.dhOpenSheet = function (id) {
     var el = document.getElementById(id);
     if (!el) return;
+    var open = document.querySelectorAll('.dh-sheet:not([hidden])').length;
+    el.style.zIndex = String(80 + (el.hidden ? open : Math.max(open - 1, 0)));
     el.hidden = false;
     document.body.style.overflow = 'hidden';
     el.scrollTop = 0;
@@ -24,15 +28,40 @@
       if (b) b.addEventListener('click', function () { window.dhCloseSheet(pair[1]); });
     });
 
-  /* ---------- Festivals ---------- */
+  /* ---------- Festivals (Calendar tab) ---------- */
+  function festBtn(f, date, cls, inner) {
+    const iso = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    return '<button type="button" class="' + cls + '" data-fest="' + f.name.replace(/"/g, '&quot;') + '" data-iso="' + iso + '">' + inner + '</button>';
+  }
   const up = festivalsUpcoming(new Date());
   document.getElementById('festivalUpcoming').innerHTML = up.slice(0, 5).map(r =>
-    '<div class="fest-card"><div class="fest-when">' + fmtFestivalDate(r.date) + '</div>' +
-    '<div class="fest-name">' + r.f.name + '</div><div class="fest-dev">' + r.f.dev + '</div>' +
-    '<div class="fest-note">' + r.f.note + '</div></div>').join('');
-  document.getElementById('festivalTable').innerHTML = FESTIVALS.map(f =>
-    '<div class="fest-row"><div class="fest-row-name">' + f.name + ' <span class="fest-dev-inline">' + f.dev + '</span></div>' +
-    '<div class="fest-row-dates">' + fmtFestivalDate(new Date(f.d2026 + 'T00:00:00')) + ' · ' + fmtFestivalDate(new Date(f.d2027 + 'T00:00:00')) + '</div></div>').join('');
+    festBtn(r.f, r.date, 'fest-card', '<span class="fest-when">' + fmtFestivalDate(r.date) + '</span>' +
+    '<span class="fest-dev">' + r.f.dev + '</span><span class="fest-name">' + r.f.name + '</span>' +
+    '<span class="fest-note">' + r.f.note + '</span>')).join('');
+  document.getElementById('festivalTable').innerHTML = FESTIVALS.map(f => {
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const d26 = new Date(f.d2026 + 'T00:00:00');
+    const d = d26 >= t0 ? d26 : new Date(f.d2027 + 'T00:00:00'); /* detail opens the next occurrence */
+    return festBtn(f, d, 'fest-row', '<span class="fest-row-name"><span class="fest-dev-inline">' + f.dev + '</span> ' + f.name + '</span>' +
+      '<span class="fest-row-dates">' + fmtFestivalDate(d26) + ' · ' + fmtFestivalDate(new Date(f.d2027 + 'T00:00:00')) + '</span>');
+  }).join('');
+  document.getElementById('festivalsSection').addEventListener('click', e => {
+    const b = e.target.closest('[data-fest]');
+    if (b && window.dhFestival) window.dhFestival.open(b.dataset.fest, b.dataset.iso);
+  });
+  function wireToggle(btnId, wrapId) {
+    const t = document.getElementById(btnId);
+    if (!t) return;
+    t.addEventListener('click', function () {
+      const w = document.getElementById(wrapId);
+      const open = w.hidden;
+      w.hidden = !open;
+      t.setAttribute('aria-expanded', open ? 'true' : 'false');
+      t.classList.toggle('open', open);
+    });
+  }
+  wireToggle('festTableToggle', 'festTableWrap');
+  wireToggle('whyToggle', 'whyWrap');
 
   /* ---------- Puja Guides ---------- */
   document.getElementById('guideList').innerHTML = PUJA_GUIDES.map((g, gi) =>
@@ -98,32 +127,5 @@
     }, { timeout: 10000 });
   });
 
-  /* ---------- hash routing (deep links + manifest shortcuts) ---------- */
-  function routeHash() {
-    const h = (location.hash || '').replace(/^#/, '');
-    if (!h) return;
-    if (h.indexOf('prayer-') === 0 && typeof window.dhOpenPrayer === 'function') {
-      window.dhOpenPrayer(h.slice(7));
-      /* consume the deep link so navigating back to this entry cannot reopen the view */
-      try { history.replaceState(null, '', location.pathname); } catch (e) {}
-      return;
-    }
-    if (h === 'japa') { window.dhOpenSheet('japaSection'); return; }
-    if (h === 'guides') { window.dhOpenSheet('guidesSection'); return; }
-    if (h === 'nearby') { window.dhOpenSheet('nearbySection'); return; }
-    if (h === 'festivals') {
-      const f = document.getElementById('festivalsSection');
-      if (f) f.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    if (h === 'why') {
-      const t = document.getElementById('whyToggle');
-      const w = document.getElementById('whyWrap');
-      if (t && w && w.hidden) t.click();
-      if (t) t.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-  }
-  window.addEventListener('hashchange', routeHash);
-  routeHash();
+  /* hash routing (deep links, manifest shortcuts, tabs) now lives in shell.js */
 })();

@@ -13,6 +13,7 @@
   "shortcuts": [
     { "name": "Japa Counter", "short_name": "Japa", "url": "./#japa", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Festivals", "short_name": "Festivals", "url": "./#festivals", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Diwali guide", "short_name": "Diwali", "url": "./#diwali", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Puja Guides", "short_name": "Guides", "url": "./#guides", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ],
   "orientation": "portrait",

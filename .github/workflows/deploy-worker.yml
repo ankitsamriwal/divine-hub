@@ -29,6 +29,18 @@ jobs:
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
+    - name: Set Sankalp+ secrets (skipped when a secret is not configured)
+      run: |
+        for NAME in PLUS_TOKEN_SECRET PLUS_ADMIN_KEY STRIPE_WEBHOOK_SECRET RAZORPAY_WEBHOOK_SECRET; do
+          VAL="${!NAME}"
+          if [ -n "$VAL" ]; then printf '%s' "$VAL" | npx -y wrangler@latest secret put "$NAME" --name "$WORKER_NAME"; else echo "skip $NAME (not set)"; fi
+        done
+      env:
+        PLUS_TOKEN_SECRET: ${{ secrets.PLUS_TOKEN_SECRET }}
+        PLUS_ADMIN_KEY: ${{ secrets.PLUS_ADMIN_KEY }}
+        STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+
     - name: Smoke test push routes
       run: |
         sleep 3
@@ -42,3 +54,7 @@ jobs:
           "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/chat" \
           -H "Origin: https://ankitsamriwal.github.io" -H "Access-Control-Request-Method: POST" \
           -H "Access-Control-Request-Headers: content-type"
+        curl -s -w '\nplus webhook while payments are off (expect 404): %{http_code}\n' -o /dev/null -X POST \
+          "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/plus/webhook/stripe" -d '{}'
+        curl -s -w '\nplus admin stats without key (expect 401, or 503 if PLUS_TOKEN_SECRET unset): %{http_code}\n' -o /dev/null \
+          "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/plus/admin/stats"

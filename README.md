@@ -23,3 +23,13 @@ All prayers are centuries-old traditional works in the public domain, compiled a
 ## Stack
 
 Vanilla HTML/CSS/JS. Fonts: Space Grotesk, Space Mono, Tiro Devanagari Hindi (Google Fonts). Audio: Web Speech API. Chat: local retrieval over the bundled corpus. Japa: localStorage streaks, WebAudio chimes, Web Speech recognition. $0 to run.
+
+## Sankalp+
+
+**No payments in this release.** Sankalp+ is a 7-day free trial (no card, one per device), followed by an anonymous demand test at the planned price ($1.99/month, ₹99/month in India). Answering extends the trial by 7 days, once. Entitlement is a token signed by the Cloudflare worker (`worker/plus.js`); the browser never holds a signing secret. The Stripe/Razorpay checkout code is kept but dormant behind `PAYMENTS_ENABLED` (off). Trial, demand test, admin stats, env vars and how to switch payments on: [docs/LAUNCH.md](docs/LAUNCH.md). What is stored and how to delete it: [privacy.html](privacy.html).
+
+Free forever: all prayer texts, the japa counter, the tithi panchang and the Diwali guide. Plus: daily city muhurat for diaspora cities and Indian metros (`muhurat.js`), festival calendar alerts, and the existing Sankalp extras. The family sankalp circle is a marked stub (`/plus/circle/*` returns 501).
+
+## Hosting hygiene
+
+`.vercelignore` keeps `assets/*.apk`, `assets/*.zip`, `worker/`, `docs/` and `.github/` out of the Vercel deployment. The files remain in git history. GitHub Pages, if still enabled for this repo, serves the whole tree; disable it or move those files to another repo to stop serving them there.
