@@ -54,5 +54,7 @@ jobs:
           "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/chat" \
           -H "Origin: https://ankitsamriwal.github.io" -H "Access-Control-Request-Method: POST" \
           -H "Access-Control-Request-Headers: content-type"
-        curl -s -w '\nplus webhook with no signature (expect 400 or 503): %{http_code}\n' -o /dev/null -X POST \
+        curl -s -w '\nplus webhook while payments are off (expect 404): %{http_code}\n' -o /dev/null -X POST \
           "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/plus/webhook/stripe" -d '{}'
+        curl -s -w '\nplus admin stats without key (expect 401, or 503 if PLUS_TOKEN_SECRET unset): %{http_code}\n' -o /dev/null \
+          "https://$WORKER_NAME.$SUBDOMAIN.workers.dev/plus/admin/stats"

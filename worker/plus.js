@@ -10,25 +10,53 @@
 //  - Manual unlock: the owner mints a single-use redeem code at /plus/admin/issue
 //    (Bearer env.PLUS_ADMIN_KEY); the user types it into the Plus sheet.
 //
+// PAYMENTS ARE DORMANT IN THIS RELEASE (owner decision, MES-7)
+//  - Every payment path is behind env.PAYMENTS_ENABLED (must be the string "true"
+//    to switch on; default off). While off, /plus/webhook/* returns 404 and the
+//    Stripe/Razorpay handlers below are never reached. The code is kept, not
+//    deleted, so payments can be switched on later (see docs/LAUNCH.md).
+//
+// FREE TRIAL + DEMAND TEST (live in this release)
+//  - 7-day Plus trial, no card. The trial token uses the same HMAC signing as paid
+//    tokens with a hard 7-day exp and no grace period. One trial per device ID: the
+//    record lives at plus:trial:<sha256("trial:"+deviceId)>, so the raw device ID
+//    is never stored. Expired trial tokens fail verifyToken (exp check) and
+//    /plus/verify also checks the KV record.
+//  - At trial end the app asks "Would you pay $1.99/month (₹99 in India)?". The
+//    answer is added to anonymous aggregate counters (answer x locale / country /
+//    city). No email, name, IP or device ID is stored with a vote. Voting once
+//    extends the trial by 7 days; that is tracked only as ext:true on the hashed
+//    device record, which never holds the answer.
+//
 // WHAT IS NOT YET PROVEN
 //  - No live Stripe/Razorpay account is connected. The event shapes handled below
 //    follow the providers' documented payloads; test with the providers' webhook
-//    test tools before taking real money (see docs/PAYMENTS.md).
+//    test tools before taking real money (see docs/LAUNCH.md).
 //  - Storage uses env.PLUS_KV if bound, else the existing KHAU_KV namespace under
 //    the "plus:" prefix. A dedicated namespace is recommended.
 //
 // Routes (all JSON):
+//   POST /plus/trial/start      {deviceId}                -> {token, exp} | 409 trial_used
+//   POST /plus/trial/vote       {deviceId, answer, locale, city} -> {token, exp} | 409
 //   POST /plus/claim            {claimId}                 -> {token} once paid
 //   POST /plus/redeem           {code, claimId}           -> {token}
 //   POST /plus/verify           {token}                   -> {ok, plan, exp, token?}
 //   POST /plus/admin/issue      {plan, days, note}        -> {code}   (Bearer PLUS_ADMIN_KEY)
-//   POST /plus/webhook/stripe   raw Stripe event          -> 200 after verified
-//   POST /plus/webhook/razorpay raw Razorpay event        -> 200 after verified
+//   GET  /plus/admin/stats                                -> counts   (Bearer PLUS_ADMIN_KEY)
+//   POST /plus/webhook/stripe   raw Stripe event          -> 200 after verified (404 while payments are off)
+//   POST /plus/webhook/razorpay raw Razorpay event        -> 200 after verified (404 while payments are off)
 
 const enc = new TextEncoder();
 const DAY = 86400;
 const GRACE_DAYS = 3;
 const PLAN_DAYS = { monthly: 31, yearly: 366, manual: 366 };
+const TRIAL_DAYS = 7;
+const EXTEND_DAYS = 7;
+const TRIAL_RECORD_TTL = 400 * DAY; // keep the one-trial-per-device record ~13 months
+// City IDs the app offers (muhurat.js); anything else is counted as "other".
+const CITY_IDS = new Set(['dubai', 'abudhabi', 'london', 'newjersey', 'toronto', 'singapore', 'delhi', 'mumbai',
+  'bengaluru', 'chennai', 'kolkata', 'hyderabad', 'ahmedabad', 'pune']);
+export function paymentsEnabled(env) { return String(env.PAYMENTS_ENABLED || '').toLowerCase() === 'true'; }
 // Price -> plan mapping (minor units). Used when the provider event has no plan metadata.
 const PRICE_PLAN = {
   usd: { 199: 'monthly', 1499: 'yearly' },
@@ -64,6 +92,14 @@ function safeEqual(a, b) {
   return r === 0;
 }
 const now = () => Math.floor(Date.now() / 1000);
+// Admin check: compare SHA-256 digests so the comparison time does not depend on
+// the supplied header's length or content.
+async function adminOk(env, request) {
+  if (!env.PLUS_ADMIN_KEY) return false;
+  const got = await sha256Hex(request.headers.get('Authorization') || '');
+  const want = await sha256Hex('Bearer ' + env.PLUS_ADMIN_KEY);
+  return safeEqual(got, want);
+}
 
 /* ---------- tokens ---------- */
 export async function signToken(env, payload) {
@@ -98,6 +134,50 @@ async function grant(env, claimId, plan, periodEnd, src, extra) {
   return { ok: true, sub: sub };
 }
 function tokenPayload(sub, ent) { return { v: 1, sub: sub, plan: ent.plan, exp: ent.exp, iat: now(), src: ent.src }; }
+
+/* ---------- free trial (no card) ---------- */
+const DEVICE_RE = /^[a-f0-9]{32}$/;
+async function trialKey(deviceId) { return 'plus:trial:' + await sha256Hex('trial:' + deviceId); }
+async function getTrial(env, key) { return kv(env).get(key, 'json'); }
+async function putTrial(env, key, rec) {
+  // metadata lets /plus/admin/stats count active/expired/extended with list() alone
+  await kv(env).put(key, JSON.stringify(rec), { expirationTtl: TRIAL_RECORD_TTL, metadata: { exp: rec.exp, ext: !!rec.ext } });
+}
+function trialPayload(key, rec) { return { v: 1, sub: key, plan: 'trial', exp: rec.exp, iat: now(), src: 'trial' }; }
+
+/* Anonymous demand-test counters: one aggregate document, no per-vote rows, no
+   timestamps, no identifiers. Read-modify-write on KV, so two votes landing in the
+   same instant can lose one increment; fine for a demand signal. */
+const VOTES_KEY = 'plus:votes:v1';
+function cleanLocale(l) { const m = /^([a-z]{2,3})(?:[-_]([a-z]{2}))?$/i.exec(String(l || '').trim()); return m ? m[1].toLowerCase() + (m[2] ? '-' + m[2].toUpperCase() : '') : 'other'; }
+function cleanCountry(c) { return /^[A-Z]{2}$/.test(String(c || '')) ? String(c) : 'XX'; }
+function cleanCity(c) { c = String(c || '').toLowerCase(); return CITY_IDS.has(c) ? c : 'other'; }
+async function addVote(env, answer, locale, country, city) {
+  const doc = (await kv(env).get(VOTES_KEY, 'json')) || {};
+  const a = doc[answer] || (doc[answer] = { total: 0, byLocale: {}, byCountry: {}, byCity: {} });
+  a.total++;
+  a.byLocale[locale] = (a.byLocale[locale] || 0) + 1;
+  a.byCountry[country] = (a.byCountry[country] || 0) + 1;
+  a.byCity[city] = (a.byCity[city] || 0) + 1;
+  await kv(env).put(VOTES_KEY, JSON.stringify(doc));
+}
+async function trialStats(env) {
+  const t = now();
+  const out = { starts: 0, active: 0, expired: 0, extended: 0 };
+  let cursor;
+  for (let page = 0; page < 50; page++) { // up to 50k records
+    const r = await kv(env).list({ prefix: 'plus:trial:', cursor: cursor });
+    for (const k of r.keys) {
+      const m = k.metadata || {};
+      out.starts++;
+      if (m.ext) out.extended++;
+      if (typeof m.exp === 'number' && m.exp > t) out.active++; else out.expired++;
+    }
+    if (r.list_complete || !r.cursor) break;
+    cursor = r.cursor;
+  }
+  return out;
+}
 
 /* ---------- best-effort per-isolate rate limit for public plus routes ---------- */
 const hits = new Map();
@@ -185,11 +265,15 @@ async function handleRazorpay(env, ev) {
 export async function handlePlusRoute(request, env, url, headers, allowedOrigin) {
   if (!url.pathname.startsWith('/plus/')) return null;
   const json = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: { ...headers, 'Content-Type': 'application/json' } });
-  if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+  const isWebhook = url.pathname === '/plus/webhook/stripe' || url.pathname === '/plus/webhook/razorpay';
+  // Payments are dormant unless PAYMENTS_ENABLED="true": the webhook routes do not exist.
+  if (isWebhook && !paymentsEnabled(env)) return json({ error: 'not_found' }, 404);
+  const isStats = url.pathname === '/plus/admin/stats';
+  if (request.method !== 'POST' && !(isStats && request.method === 'GET')) return json({ error: 'method_not_allowed' }, 405);
   if (!env.PLUS_TOKEN_SECRET || !kv(env)) return json({ error: 'plus_not_configured' }, 503);
 
   // Webhooks: server-to-server, no Origin; authenticity comes from the signature.
-  if (url.pathname === '/plus/webhook/stripe' || url.pathname === '/plus/webhook/razorpay') {
+  if (isWebhook) {
     const raw = await request.text();
     const isStripe = url.pathname.endsWith('/stripe');
     const ok = isStripe
@@ -203,8 +287,7 @@ export async function handlePlusRoute(request, env, url, headers, allowedOrigin)
 
   // Owner-only: mint a single-use redeem code (manual unlock path, e.g. after a bank transfer).
   if (url.pathname === '/plus/admin/issue') {
-    const auth = request.headers.get('Authorization') || '';
-    if (!env.PLUS_ADMIN_KEY || !safeEqual(auth, 'Bearer ' + env.PLUS_ADMIN_KEY)) return json({ error: 'unauthorized' }, 401);
+    if (!(await adminOk(env, request))) return json({ error: 'unauthorized' }, 401);
     let d; try { d = await request.json(); } catch (e) { d = {}; }
     const plan = ['monthly', 'yearly', 'manual'].includes(d.plan) ? d.plan : 'manual';
     const days = Math.min(Math.max(parseInt(d.days, 10) || PLAN_DAYS[plan], 1), 800);
@@ -214,11 +297,59 @@ export async function handlePlusRoute(request, env, url, headers, allowedOrigin)
     return json({ code: code, plan: plan, days: days });
   }
 
+  // Owner-only: trial and demand-test numbers. Aggregates only; no identifiers exist to return.
+  if (isStats) {
+    if (!(await adminOk(env, request))) return json({ error: 'unauthorized' }, 401);
+    const votes = (await kv(env).get(VOTES_KEY, 'json')) || {};
+    const empty = { total: 0, byLocale: {}, byCountry: {}, byCity: {} };
+    return json({
+      generatedAt: new Date().toISOString(),
+      paymentsEnabled: paymentsEnabled(env),
+      trials: await trialStats(env),
+      votes: { yes: votes.yes || empty, no: votes.no || empty }
+    });
+  }
+
   // Browser routes: origin-locked and rate-limited.
   if (!allowedOrigin) return json({ error: 'forbidden_origin' }, 403);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   if (limited(ip, 30)) return json({ error: 'rate_limited' }, 429);
   let d; try { d = await request.json(); } catch (e) { return json({ error: 'bad_json' }, 400); }
+
+  if (url.pathname === '/plus/trial/start') {
+    const deviceId = String(d.deviceId || '').toLowerCase();
+    if (!DEVICE_RE.test(deviceId)) return json({ error: 'bad_device_id' }, 400);
+    const key = await trialKey(deviceId);
+    const rec = await getTrial(env, key);
+    if (rec) {
+      // Same device asking again (e.g. its token was lost): re-issue while still live, never restart.
+      if (rec.exp > now()) return json({ token: await signToken(env, trialPayload(key, rec)), exp: rec.exp, ext: !!rec.ext, resumed: true });
+      return json({ error: 'trial_used', exp: rec.exp, ext: !!rec.ext }, 409);
+    }
+    const t = now();
+    const fresh = { start: t, exp: t + TRIAL_DAYS * DAY, ext: false };
+    await putTrial(env, key, fresh);
+    return json({ token: await signToken(env, trialPayload(key, fresh)), exp: fresh.exp, ext: false });
+  }
+
+  if (url.pathname === '/plus/trial/vote') {
+    const deviceId = String(d.deviceId || '').toLowerCase();
+    const answer = d.answer === 'yes' ? 'yes' : d.answer === 'no' ? 'no' : null;
+    if (!DEVICE_RE.test(deviceId) || !answer) return json({ error: 'bad_request' }, 400);
+    const key = await trialKey(deviceId);
+    const rec = await getTrial(env, key);
+    if (!rec) return json({ error: 'no_trial' }, 409);
+    if (rec.ext) return json({ error: 'already_extended', exp: rec.exp }, 409);
+    if (rec.exp - now() > DAY) return json({ error: 'too_early', exp: rec.exp }, 409); // the question is asked at trial end
+    // Anonymous: only the answer and coarse location go into the aggregate counters.
+    const country = cleanCountry(request.cf && request.cf.country);
+    await addVote(env, answer, cleanLocale(d.locale), country, cleanCity(d.city));
+    // Separately, mark the hashed device record as extended (it never holds the answer).
+    rec.ext = true;
+    rec.exp = Math.max(now(), rec.exp) + EXTEND_DAYS * DAY;
+    await putTrial(env, key, rec);
+    return json({ token: await signToken(env, trialPayload(key, rec)), exp: rec.exp, ext: true });
+  }
 
   if (url.pathname === '/plus/claim') {
     const claimId = String(d.claimId || '').toLowerCase();
@@ -243,8 +374,14 @@ export async function handlePlusRoute(request, env, url, headers, allowedOrigin)
   }
 
   if (url.pathname === '/plus/verify') {
-    const p = await verifyToken(env, d.token);
+    const p = await verifyToken(env, d.token); // rejects any token past its exp, trial or paid
     if (!p) return json({ ok: false });
+    if (p.src === 'trial') {
+      const rec = String(p.sub).startsWith('plus:trial:') ? await getTrial(env, p.sub) : null;
+      if (!rec || rec.exp <= now()) return json({ ok: false, expired: true });
+      if (rec.exp > p.exp) return json({ ok: true, plan: 'trial', exp: rec.exp, token: await signToken(env, trialPayload(p.sub, rec)) });
+      return json({ ok: true, plan: 'trial', exp: p.exp });
+    }
     const ent = await getEnt(env, p.sub);
     if (ent && ent.revoked) return json({ ok: false, revoked: true });
     // renewal landed since this token was minted: hand back a fresher one

@@ -7,6 +7,9 @@ workers_dev = true
 mode = "smart"
 
 [vars]
+# Sankalp+ payments are dormant: the Stripe/Razorpay webhook routes return 404
+# unless this is exactly "true". See docs/LAUNCH.md before changing it.
+PAYMENTS_ENABLED = "false"
 VAPID_PUB = "BCa0v0XHzyuBbO3chPPsiDu7htwIIi8K3H_1sFt7v5iiWKAChxVxAZ25UYuawwQadfsZNSUucWLr0ciqxEIwDHE"
 
 [triggers]

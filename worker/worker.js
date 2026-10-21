@@ -1,5 +1,5 @@
 // Divine Hub — Divine Guide proxy worker (Cloudflare, free tier)
-// Also hosts the Sankalp+ entitlement service (see plus.js and docs/PAYMENTS.md).
+// Also hosts the Sankalp+ entitlement service (see plus.js and docs/LAUNCH.md).
 import { handlePlusRoute } from './plus.js';
 // Holds the Gemini API key as a worker secret (GEMINI_API_KEY).
 // CORS-locked to the GitHub Pages origin. Best-effort per-IP rate limit
