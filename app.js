@@ -267,14 +267,15 @@
         <button id="pvShare" class="pv-action">↗ Share</button>
         <button id="pvFocus" class="pv-action pv-focus">🪔 Focus mode</button>
       </div>
+      <div id="sungSlot"></div>
       <div class="listen-bar">
-        <span class="listen-label">Listen</span>
+        <span class="listen-label">Read aloud</span>
         <select id="ttsLang" aria-label="Narration language">
           <option value="dev">${langLabel}</option>
           <option value="translit">Transliteration</option>
           <option value="meaning">English meaning</option>
         </select>
-        <button id="ttsPlay">▶ Play</button>
+        <button id="ttsPlay">▶ Read</button>
         <button id="ttsStop" class="stop">■ Stop</button>
         <span class="rate-wrap">pace <input type="range" id="ttsRate" min="60" max="110" value="88"></span>
         <span class="listen-note" id="ttsNote"></span>
@@ -287,6 +288,7 @@
       <div id="stanzaWrap"></div>`;
 
     renderStanzas();
+    renderSung(p);
 
     prayerContent.querySelectorAll('.text-tab').forEach(t => {
       t.addEventListener('click', () => {
@@ -310,6 +312,41 @@
     });
     document.getElementById('pvShare').addEventListener('click', () => sharePrayer(p));
     document.getElementById('pvFocus').addEventListener('click', () => { if (window.dhOpenFocus) window.dhOpenFocus(p.id); });
+  }
+
+  /* ---------- sung version (official YouTube upload, loads only on tap) ---------- */
+  function renderSung(p) {
+    const slot = document.getElementById('sungSlot');
+    if (!slot) return;
+    const src = (typeof AUDIO_SOURCES !== 'undefined') ? AUDIO_SOURCES[p.id] : null;
+    const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    if (!src || !/^[A-Za-z0-9_-]{11}$/.test(src.youtube || '')) {
+      const words = [p.title]; if (!p.title.toLowerCase().includes(p.type.toLowerCase())) words.push(p.type); const q = encodeURIComponent(words.join(' '));
+      slot.innerHTML = `<a class="sung-find" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">♪ Find a sung version on YouTube ↗</a>`;
+      return;
+    }
+    const id = src.youtube;
+    slot.innerHTML = `
+      <div class="sung-card">
+        <div class="sung-head"><span class="listen-label">Sung version</span><span class="sung-by">${esc(src.channel)}</span></div>
+        <button type="button" class="sung-thumb" id="sungPlay" aria-label="Play the sung ${esc(p.title)}">
+          <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">
+          <span class="sung-play" aria-hidden="true">▶</span>
+        </button>
+        <div class="sung-foot">Plays from YouTube; ads may appear. <a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Open on YouTube ↗</a></div>
+      </div>`;
+    document.getElementById('sungPlay').addEventListener('click', () => {
+      stopSpeech();
+      const frame = document.createElement('iframe');
+      frame.className = 'sung-frame';
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+      frame.title = (src.title || p.title) + ' — sung version';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture';
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      const thumb = document.getElementById('sungPlay');
+      thumb.replaceWith(frame);
+    });
   }
 
   /* ---------- share ---------- */

@@ -1,11 +1,12 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v48';
+const CACHE = 'divine-hub-v49';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=48',
+  './styles.css?v=49',
   './backnav.js?v=46',
-  './app.js?v=46',
+  './audio.js?v=49',
+  './app.js?v=49',
   './focus.js?v=46',
   './journeys.js?v=46',
   './sadhana.js?v=46',
