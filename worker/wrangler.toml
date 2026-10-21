@@ -18,3 +18,7 @@ crons = ["0 4 * * *"]
 [[kv_namespaces]]
 binding = "KHAU_KV"
 id = "14dc732542164efea1cb0d522ec593bb"
+
+[[kv_namespaces]]
+binding = "PLUS_KV"
+id = "d19e0cae0e1345279a96a3a0d14f69bf"
