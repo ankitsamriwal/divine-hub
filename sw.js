@@ -1,19 +1,23 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v46';
+const CACHE = 'divine-hub-v47';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=46',
+  './styles.css?v=47',
   './backnav.js?v=46',
   './app.js?v=46',
   './focus.js?v=46',
   './journeys.js?v=46',
   './sadhana.js?v=46',
-  './plus.js?v=46',
+  './plus.js?v=47',
   './sankalp.js?v=46',
   './quizzes.js?v=46',
   './almanac.js?v=46',
   './panchang.js?v=46',
+  './config.js?v=47',
+  './muhurat.js?v=47',
+  './diwali.js?v=47',
+  './privacy.html',
   './sandhya.js?v=46',
   './ambience.js?v=46',
   './assets/bells.mp3',
@@ -52,7 +56,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  if (url.hostname === 'divine-guide.ankitsamriwal.workers.dev') return; // guide API: always live
+  if (url.hostname === 'divine-guide.ankitsamriwal.workers.dev') return; // guide + Plus API: always live
+  if (/\.(apk|zip)$/i.test(url.pathname)) return; // never cache downloads
 
   // navigations: network first, fall back to cached shell when offline
   if (e.request.mode === 'navigate') {

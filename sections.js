@@ -111,6 +111,9 @@
     if (h === 'japa') { window.dhOpenSheet('japaSection'); return; }
     if (h === 'guides') { window.dhOpenSheet('guidesSection'); return; }
     if (h === 'nearby') { window.dhOpenSheet('nearbySection'); return; }
+    if (h === 'diwali' && window.dhMuhuratUI) { window.dhMuhuratUI.openDiwali(); return; }
+    if (h === 'muhurat' && window.dhMuhuratUI) { window.dhMuhuratUI.open(); return; }
+    if (h === 'plus' && window.dhPlus) { window.dhPlus.open(); return; }
     if (h === 'festivals') {
       const f = document.getElementById('festivalsSection');
       if (f) f.scrollIntoView({ behavior: 'smooth' });

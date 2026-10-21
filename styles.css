@@ -2761,3 +2761,48 @@ body {
 .pk-card .pk-card-jaap{background:#e8d8bf;border:0;border-radius:0;text-align:center;padding:1rem}
 .pk-card .pk-card-bell{border-radius:0;padding:1rem;letter-spacing:.03em}
 @media(max-width:654px){.pk-cell{min-height:68px;padding:5px 4px}.pk-book{padding:0}.pk-weekdays{font-size:.53rem}.pk-card{padding:1.65rem 1.35rem 2rem}.pk-card .pk-card-tithi{font-size:1.75rem}}
+
+/* ---------- Plus pricing (v47) ---------- */
+.plus-soon { font-size: 0.66rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cream-dim); border: 1px solid var(--gold-dim); border-radius: 999px; padding: 0.05rem 0.45rem; margin-left: 0.35rem; vertical-align: middle; }
+.plus-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.4rem; }
+.plus-price {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem; cursor: pointer;
+  background: var(--ink-2); border: 1px solid rgba(226, 169, 78, 0.3); border-radius: 14px;
+  padding: 0.85rem 0.6rem; color: var(--cream); font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.plus-price:first-child { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dim) inset; }
+.plus-price:hover, .plus-price:focus-visible { border-color: var(--gold); box-shadow: 0 0 16px rgba(226, 169, 78, 0.2); outline: none; }
+.plus-price b { font-size: 1.5rem; color: var(--gold); }
+.plus-price span { font-size: 0.78rem; color: var(--cream-dim); }
+.plus-price .plus-price-tag { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--flame); }
+.plus-center { text-align: center; }
+.plus-link { background: none; border: none; padding: 0; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
+.plus-note a { color: var(--gold); }
+.plus-cta-btn { width: 100%; border: none; cursor: pointer; font-family: inherit; }
+.plus-owner-out { word-break: break-all; }
+
+/* ---------- Diwali banner + guide + muhurat (v47) ---------- */
+.dw-banner { display: flex; align-items: stretch; gap: 0.4rem; margin: 0 0 1rem; border-radius: 16px;
+  background: linear-gradient(120deg, rgba(217, 112, 44, 0.22), rgba(226, 169, 78, 0.12)); border: 1px solid rgba(226, 169, 78, 0.45); }
+.dw-banner-main { flex: 1; display: flex; align-items: center; gap: 0.8rem; text-align: left; background: none; border: none; color: var(--cream); font-family: inherit; padding: 0.85rem 0.9rem; cursor: pointer; font-size: 0.95rem; }
+.dw-banner-main b { color: var(--gold); }
+.dw-banner-main small { color: var(--cream-dim); font-size: 0.8rem; }
+.dw-banner-diya { font-size: 1.8rem; }
+.dw-banner-x { background: none; border: none; color: var(--cream-dim); padding: 0 0.85rem; cursor: pointer; font-size: 0.9rem; }
+.dw-card { background: var(--ink-2); border: 1px solid rgba(226, 169, 78, 0.2); border-radius: 14px; padding: 0.9rem 1rem; margin: 0.8rem 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.dw-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.dw-row .dw-select { flex: 1 1 140px; }
+.dw-select { background: var(--ink-3); color: var(--cream); border: 1px solid rgba(226, 169, 78, 0.3); border-radius: 10px; padding: 0.55rem 0.7rem; font: inherit; font-size: 0.92rem; color-scheme: dark; }
+.dw-times { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.2rem 0; }
+.dw-times > div { display: flex; justify-content: space-between; gap: 0.8rem; border-bottom: 1px dashed rgba(226, 169, 78, 0.14); padding-bottom: 0.3rem; }
+.dw-times dt { color: var(--cream-dim); font-size: 0.85rem; }
+.dw-times dd { color: var(--cream); font-family: var(--font-mono); font-size: 0.85rem; text-align: right; }
+.dw-times dd small { font-family: var(--font-ui); color: var(--cream-dim); }
+.dw-lead { color: var(--cream); font-size: 0.92rem; line-height: 1.6; }
+.dw-lead b { color: var(--gold); }
+.dw-disclaimer { color: var(--cream-dim); font-size: 0.74rem; line-height: 1.5; }
+.dw-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.4rem 0; }
+.dw-plus { margin-top: 1.2rem; padding: 0.9rem 1rem; border: 1px dashed rgba(226, 169, 78, 0.45); border-radius: 14px; color: var(--cream-dim); font-size: 0.88rem; line-height: 1.6; display: flex; flex-direction: column; gap: 0.6rem; }
+.dw-plus b { color: var(--gold); }
+.footer-links { font-size: 0.8rem; }
+.footer-links a { color: var(--gold); }

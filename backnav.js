@@ -18,6 +18,9 @@
     sankalpSheet: function () { return clickById('sankalpClose'); },
     guidesSection: function () { return clickById('guidesClose'); },
     nearbySection: function () { return clickById('nearbyClose'); },
+    plusSheet: function () { return clickById('plusClose'); },
+    diwaliSheet: function () { return clickById('diwaliSheetClose'); },
+    muhuratSheet: function () { return clickById('muhuratSheetClose'); },
     sandhyaView: function () { return clickById('syvX') || clickById('syExit'); },
     fabMenu: function () { var m = document.getElementById('fabMenu'); if (m) { m.hidden = true; return true; } return false; }
   };
