@@ -70,9 +70,16 @@
     }
     h += '<div class="dw-plus">' + (plus()
       ? '<b>✨ Plus:</b> open <button class="plus-link" id="dwDaily">daily muhurat</button> for Dhanteras, Govardhan and Bhai Dooj in your city, or <button class="plus-link" id="dwIcs">add all festivals to your calendar</button>.'
-      : '<b>✨ Sankalp+</b> gives you this for every day of the year: Brahma muhurta, Abhijit, Rahu kaal and Pradosh for your city, plus festival alerts in your phone calendar. <button class="plus-cta plus-cta-btn" id="dwGoPlus">See Plus · from ' + esc(priceHint()) + '</button>') +
+      : '<b>✨ Sankalp+</b> gives you this for every day of the year: Brahma muhurta, Abhijit, Rahu kaal and Pradosh for your city, plus festival alerts in your phone calendar. ' + plusButton()) +
       '</div>';
     return h;
+  }
+  /* Primary button: the free trial when this device can still start one. Prices
+     appear only when payments are switched on (DH_CONFIG.PAYMENTS_ENABLED). */
+  function plusButton() {
+    var P = window.dhPlus;
+    if (P && P.canStartTrial && P.canStartTrial()) return '<button class="plus-cta plus-cta-btn" id="dwTrial">Start 7-day free trial</button><small class="dw-trial-note">No card needed.</small>';
+    return '<button class="plus-cta plus-cta-btn" id="dwGoPlus">' + (P && P.paymentsEnabled ? 'See Plus · from ' + esc(priceHint()) : 'See Sankalp+') + '</button>';
   }
   function priceHint() {
     var C = window.DH_CONFIG || {}, tz = '';
@@ -92,6 +99,13 @@
       body.querySelector('#dwAshtakam').addEventListener('click', function () { prayer('mahalakshmi-ashtakam'); });
       var b;
       if ((b = body.querySelector('#dwGoPlus'))) b.addEventListener('click', openPlus);
+      if ((b = body.querySelector('#dwTrial'))) b.addEventListener('click', function () {
+        var btn = this; btn.disabled = true; btn.textContent = 'Starting…';
+        window.dhPlus.startTrial().then(function (r) {
+          if (r === 'ok') { paint(); return; }
+          openPlus(); // shows "trial already used" / offline message and the demand test
+        });
+      });
       if ((b = body.querySelector('#dwDaily'))) b.addEventListener('click', function () { window.dhCloseSheet('diwaliSheet'); openMuhurat(); });
       if ((b = body.querySelector('#dwIcs'))) b.addEventListener('click', function () { M.downloadIcs(M.getCity()); });
     }
@@ -156,9 +170,16 @@
     b.className = 'dw-banner';
     b.innerHTML = '<button class="dw-banner-main" id="dwBannerGo"><span class="dw-banner-diya" aria-hidden="true">🪔</span>' +
       '<span><b>Diwali is ' + when + '</b> · Sun 8 Nov 2026<br><small>Lakshmi puja steps, aarti and the Pradosh time for your city</small></span></button>' +
+      (window.dhPlus && window.dhPlus.canStartTrial && window.dhPlus.canStartTrial()
+        ? '<button class="dw-banner-trial" id="dwBannerTrial">Start 7-day free trial</button>' : '') +
       '<button class="dw-banner-x" id="dwBannerX" aria-label="Hide Diwali banner">✕</button>';
     host.insertBefore(b, host.querySelector('.zone-head') ? host.querySelector('.zone-head').nextSibling : host.firstChild);
     b.querySelector('#dwBannerGo').addEventListener('click', openDiwali);
+    var tb = b.querySelector('#dwBannerTrial');
+    if (tb) tb.addEventListener('click', function () {
+      tb.disabled = true; tb.textContent = 'Starting…';
+      window.dhPlus.startTrial().then(function () { tb.remove(); openPlus(); });
+    });
     b.querySelector('#dwBannerX').addEventListener('click', function () { try { localStorage.setItem(LS_BANNER, 'x'); } catch (e) {} b.remove(); });
   }
 

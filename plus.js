@@ -1,6 +1,6 @@
 /* Divine Hub — Sankalp+ entitlement (client).
    The browser holds only an entitlement TOKEN minted and signed by the worker
-   (HMAC secret lives in the worker env; see worker/plus.js, docs/PAYMENTS.md).
+   (HMAC secret lives in the worker env; see worker/plus.js, docs/LAUNCH.md).
    The client cannot mint or forge tokens. It re-checks the token with the worker
    at most once a day and drops it if the worker says it is invalid.
 
@@ -8,8 +8,21 @@
    are gated in the browser, so a determined user editing JS can still bypass
    them. Server-backed Plus features must call /plus/verify (as the worker does).
 
+   THIS RELEASE: payments are dormant (DH_CONFIG.PAYMENTS_ENABLED is false). No
+   prices with buy buttons and no checkout links are shown. Instead:
+     - 7-day free trial, no card: /plus/trial/start returns a worker-signed token
+       with a hard 7-day expiry, one trial per device ID (the worker keys its record
+       by a hash of the ID). The ID is kept in localStorage AND IndexedDB, so clearing
+       only one of them does not mint a new ID. "Clear site data" removes both, and a
+       new device gets a new trial; see docs/LAUNCH.md.
+     - Demand test at trial end: planned price plus "I'd pay for this" / "Not for
+       me". The worker stores only anonymous counters; answering once extends the
+       trial by 7 days.
+   The checkout code below stays in place, dormant, for when payments are enabled.
+
    Ways to get a token:
-     1. Checkout: a payment link (from config.js) carries this device's random
+     0. Trial (above).
+     1. Checkout (only when PAYMENTS_ENABLED): a payment link (from config.js) carries this device's random
         claim ID; the provider webhook marks it paid; /plus/claim returns a token.
      2. Manual: the owner mints a single-use redeem code on the worker
         (/plus/admin/issue) and the user enters it here (/plus/redeem).
@@ -24,6 +37,9 @@
   const WORKER = CFG.WORKER_URL || 'https://divine-guide.ankitsamriwal.workers.dev';
   const OWNER_EMAIL = CFG.OWNER_EMAIL || 'ankitsamriwal@gmail.com';
   const VERIFY_EVERY_MS = 24 * 3600 * 1000;
+  const PAYMENTS_ENABLED = CFG.PAYMENTS_ENABLED === true;
+  const DAY_MS = 24 * 3600 * 1000;
+  const IDB_NAME = 'divinehub_device_v1';
 
   function load() {
     try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
@@ -50,6 +66,43 @@
     return s.claimId;
   }
 
+  /* ---------- device ID (trial: one per device) ----------
+     Random 128-bit ID, not derived from the device or the person. Mirrored into
+     IndexedDB so that clearing localStorage alone keeps the same ID. */
+  function idbOpen() {
+    return new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open(IDB_NAME, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+  }
+  function idbGet() {
+    return idbOpen().then(db => new Promise(res => {
+      const q = db.transaction('kv', 'readonly').objectStore('kv').get('deviceId');
+      q.onsuccess = () => res(q.result || null); q.onerror = () => res(null);
+    })).catch(() => null);
+  }
+  function idbPut(v) {
+    return idbOpen().then(db => new Promise(res => {
+      const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, 'deviceId');
+      t.oncomplete = () => res(true); t.onerror = () => res(false);
+    })).catch(() => false);
+  }
+  const HEX32 = /^[a-f0-9]{32}$/;
+  function deviceId() {
+    const s = load();
+    return idbGet().then(fromIdb => {
+      let id = HEX32.test(fromIdb || '') ? fromIdb : (HEX32.test(s.deviceId || '') ? s.deviceId : null);
+      if (!id) id = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+      if (s.deviceId !== id) { const st = load(); st.deviceId = id; save(st); }
+      if (fromIdb !== id) idbPut(id);
+      return id;
+    });
+  }
+
   function tokenPayload(tok) {
     try {
       const part = String(tok).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -58,8 +111,45 @@
   }
   function tokenLive(s) { return !!(s.token && s.exp && s.exp * 1000 > Date.now()); }
   function isLegacy(s) { return !!(s.active && !s.token); }
-  function isActive() { const s = load(); return tokenLive(s) || isLegacy(s); }
-  function token() { const s = load(); return tokenLive(s) ? s.token : null; }
+  function trialLive(s) { return !!(s.trial && s.trial.token && s.trial.exp * 1000 > Date.now()); }
+  function trialEnded(s) { return !!(s.trial && (s.trial.used || (s.trial.exp && s.trial.exp * 1000 <= Date.now()))) && !trialLive(s); }
+  function paidOrLegacy(s) { return tokenLive(s) || isLegacy(s); }
+  function isActive() { const s = load(); return paidOrLegacy(s) || trialLive(s); }
+  function token() { const s = load(); return tokenLive(s) ? s.token : trialLive(s) ? s.trial.token : null; }
+  function trialDaysLeft() { const s = load(); return trialLive(s) ? Math.max(1, Math.ceil((s.trial.exp * 1000 - Date.now()) / DAY_MS)) : 0; }
+  function canStartTrial() { const s = load(); return !paidOrLegacy(s) && !s.trial; }
+
+  /* Expired trial: drop only the token; every goal, journal entry and setting stays.
+     Plus-only features simply fall back to their free versions. */
+  function storeTrial(r) {
+    const p = r.token ? tokenPayload(r.token) : null;
+    const s = load();
+    s.trial = Object.assign({}, s.trial || {}, p && p.exp ? { token: r.token, exp: p.exp } : {}, { ext: !!r.ext });
+    if (!p && r.exp) { s.trial.exp = r.exp; s.trial.used = true; delete s.trial.token; }
+    save(s);
+    changed();
+  }
+  function startTrial() {
+    if (!canStartTrial()) return Promise.resolve('not_eligible');
+    return deviceId().then(id => post('/plus/trial/start', { deviceId: id })).then(r => {
+      if (r.j && r.j.token) { storeTrial(r.j); return 'ok'; }
+      if (r.status === 409) { storeTrial({ exp: r.j.exp || Math.floor(Date.now() / 1000), ext: r.j.ext }); return 'used'; }
+      return 'error';
+    }).catch(() => 'offline');
+  }
+  function vote(answer) {
+    let city = '';
+    try { city = window.dhMuhurat ? window.dhMuhurat.getCity().id : ''; } catch (e) {}
+    const locale = (navigator.language || '').slice(0, 10);
+    return deviceId().then(id => post('/plus/trial/vote', { deviceId: id, answer: answer, locale: locale, city: city })).then(r => {
+      const mark = () => { const s = load(); s.voted = true; save(s); }; // remembers THAT this device answered, never what
+      if (r.j && r.j.token) { mark(); storeTrial(r.j); return 'extended'; }
+      if (r.status === 409 && r.j && r.j.error === 'already_extended') {
+        mark(); const st = load(); if (st.trial) { st.trial.ext = true; save(st); } return 'already';
+      }
+      return 'error';
+    }).catch(() => 'offline');
+  }
 
   function storeToken(tok) {
     const p = tokenPayload(tok);
@@ -85,6 +175,18 @@
 
   /* daily server re-check; network failure keeps the token (offline-friendly) */
   function verifySoon() {
+    const s0 = load();
+    if (trialLive(s0) && !(s0.trial.verifiedAt && Date.now() - s0.trial.verifiedAt < VERIFY_EVERY_MS)) {
+      post('/plus/verify', { token: s0.trial.token }).then(r => {
+        const cur = load();
+        if (!cur.trial) return;
+        if (r.j && r.j.ok === false) { delete cur.trial.token; cur.trial.used = true; save(cur); changed(); return; }
+        if (r.j && r.j.ok) {
+          if (r.j.token) { const p = tokenPayload(r.j.token); if (p) { cur.trial.token = r.j.token; cur.trial.exp = p.exp; } }
+          cur.trial.verifiedAt = Date.now(); save(cur); changed();
+        }
+      }).catch(() => {});
+    }
     const s = load();
     if (!s.token || (s.verifiedAt && Date.now() - s.verifiedAt < VERIFY_EVERY_MS)) return;
     post('/plus/verify', { token: s.token }).then(r => {
@@ -126,6 +228,7 @@
     return { m: m, y: y, save: save };
   }
   function checkoutUrl(period, cur) {
+    if (!PAYMENTS_ENABLED) return ''; // dormant: config.js links are not used in this release
     // INR -> Razorpay, everything else -> Stripe (USD pricing for USD/AED diaspora)
     const base = CFG[(cur === 'INR' ? 'RAZORPAY_LINK_' : 'STRIPE_LINK_') + period];
     if (!base) return '';
@@ -180,12 +283,56 @@
       '<p class="plus-note">Always free: every prayer text, the japa counter, the tithi panchang and the Diwali guide.</p>';
   }
 
+  /* ---------- demand test (no payment is taken) ---------- */
+  function plannedPrice() {
+    const cur = defaultCur(); // India locale -> INR, everyone else -> USD
+    return cur === 'INR' ? (CFG.PRICE_MONTHLY_INR || '₹99') + '/month' : (CFG.PRICE_MONTHLY_USD || '$1.99') + '/month';
+  }
+  function demandHtml(s) {
+    if (s.voted) return '<p class="plus-note plus-center">Thank you for answering. It helps decide whether Sankalp+ becomes a paid plan.</p>';
+    return '<div class="plus-demand" id="plusDemand"><div class="sk-label">One quick question</div>' +
+      '<p>We plan to offer Sankalp+ at <b>' + esc(plannedPrice()) + '</b>. Nothing is on sale yet and nothing will be charged. Would you pay for this?</p>' +
+      '<div class="plus-demand-row"><button class="plus-cta plus-cta-btn" data-vote="yes">I\'d pay for this</button>' +
+      '<button class="plus-ghost" data-vote="no">Not for me</button></div>' +
+      '<p class="plus-note">Your answer is counted anonymously (with your language setting, country and chosen city only). Answering ' +
+        ((s.trial && s.trial.ext) ? 'is optional.' : 'adds <b>7 more days</b> of Plus, once per device.') + '</p></div>';
+  }
+  function wireDemand(body, msg) {
+    body.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', () => {
+      body.querySelectorAll('[data-vote]').forEach(x => { x.disabled = true; });
+      msg('Saving…');
+      vote(b.dataset.vote).then(r => {
+        if (r === 'extended') { render('Thank you. Plus is extended by 7 days.'); return; }
+        if (r === 'already') { render('This device has already answered. Thank you.'); return; }
+        body.querySelectorAll('[data-vote]').forEach(x => { x.disabled = false; });
+        msg(r === 'offline' ? 'You seem to be offline. Try again when connected.' : 'Could not save your answer. Please try again later.');
+      });
+    }));
+  }
+  function fmtDate(sec) { return new Date(sec * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
+
   function render(msgText) {
     const body = document.getElementById('plusBody');
     if (!body) return;
     const s = load();
+    const msg = t => { const m = body.querySelector('#plusMsg'); if (m) m.textContent = t; };
 
-    if (tokenLive(s) || isLegacy(s)) {
+    if (!paidOrLegacy(s) && trialLive(s)) {
+      const left = trialDaysLeft();
+      body.innerHTML =
+        '<div class="plus-hero"><span class="plus-om">✨</span>' +
+        '<h2><span class="plus-dev">सङ्कल्प</span>+ free trial</h2>' +
+        '<p><b>' + left + ' day' + (left === 1 ? '' : 's') + ' left</b> · ends ' + fmtDate(s.trial.exp) + '. No card, nothing to cancel. When it ends you keep everything you made; Plus-only features go back to their free versions.</p></div>' +
+        featsHtml() +
+        '<button class="plus-cta plus-cta-btn" id="plusMuhurat">Open city muhurat</button>' +
+        (left <= 1 ? demandHtml(s) : '') +
+        '<p class="plus-note" id="plusMsg" role="status">' + esc(msgText || '') + '</p>';
+      body.querySelector('#plusMuhurat').addEventListener('click', () => { window.dhCloseSheet('plusSheet'); if (window.dhMuhuratUI) window.dhMuhuratUI.open(); });
+      wireDemand(body, msg);
+      return;
+    }
+
+    if (paidOrLegacy(s)) {
       const until = tokenLive(s) ? new Date(s.exp * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
       body.innerHTML =
         '<div class="plus-hero"><span class="plus-om">✨</span>' +
@@ -202,15 +349,43 @@
       return;
     }
 
+    const ended = trialEnded(s);
+    const trialBtn = canStartTrial()
+      ? '<button class="plus-cta plus-cta-btn" id="plusTrial">Start 7-day free trial</button>' +
+        '<p class="plus-note plus-center">No card needed. One trial per device. Nothing is charged at the end.</p>'
+      : '';
+    const redeemHtml =
+      '<div class="sk-label">Have a redeem code?</div>' +
+      '<div class="plus-unlock-row"><input id="plusCode" type="text" placeholder="XXXXX-XXXXX" autocomplete="off" maxlength="11" aria-label="Redeem code">' +
+      '<button id="plusUnlock" class="sk-j-save">Redeem</button></div>';
+    const heroHtml = ended
+      ? '<div class="plus-hero"><span class="plus-om">✨</span><h2><span class="plus-dev">सङ्कल्प</span>+ trial ended</h2>' +
+        '<p>Your trial ended' + (s.trial.exp ? ' on ' + fmtDate(s.trial.exp) : '') + '. Everything you made is still here; Plus-only features are back to their free versions.</p></div>'
+      : '<div class="plus-hero"><span class="plus-om">✨</span>' +
+        '<h2><span class="plus-dev">सङ्कल्प</span>+ · Sankalp Plus</h2>' +
+        '<p>Your city\'s muhurat, festival alerts and a deeper sankalp practice. Try all of it free for 7 days.</p></div>';
+
+    if (!PAYMENTS_ENABLED) {
+      // Payments dormant: no prices with buy buttons, no checkout links, no restore-a-purchase path.
+      body.innerHTML = heroHtml + (ended ? demandHtml(s) : '') + featsHtml() + trialBtn +
+        '<p class="plus-note" id="plusMsg" role="status">' + esc(msgText || '') + '</p>' +
+        redeemHtml +
+        '<p class="plus-note">Sankalp+ is not on sale yet. <a href="' + requestMailto() + '">Questions? Email us</a> (request ID <b>' + esc(requestId()) + '</b>). ' +
+        '<a href="privacy.html">Privacy</a></p>';
+      wireTrial(body, msg);
+      wireDemand(body, msg);
+      wireRedeem(body, msg);
+      return;
+    }
+
+    /* ----- PAYMENTS_ENABLED only (dormant in this release) ----- */
     const cur = currency();
     const p = prices(cur);
     const other = cur === 'INR' ? 'USD' : 'INR';
     const pending = s.pendingCheckout && Date.now() - s.pendingCheckout.at < 48 * 3600 * 1000;
     body.innerHTML =
-      '<div class="plus-hero"><span class="plus-om">✨</span>' +
-      '<h2><span class="plus-dev">सङ्कल्प</span>+ · Sankalp Plus</h2>' +
-      '<p>Your city\'s muhurat, festival alerts and a deeper sankalp practice — for less than a diya a week.</p></div>' +
-      featsHtml() +
+      heroHtml + (ended ? demandHtml(s) : '') +
+      featsHtml() + trialBtn +
       '<div class="plus-prices" role="group" aria-label="Choose a plan">' +
         '<button class="plus-price" data-period="YEARLY"><span class="plus-price-tag">Best value' + (p.save > 0 ? ' · save ' + p.save + '%' : '') + '</span>' +
           '<b>' + esc(p.y) + '</b><span>per year</span></button>' +
@@ -219,9 +394,7 @@
       '<p class="plus-note plus-center">Prices in ' + cur + '. <button class="plus-link" id="plusCur">Show ' + other + '</button> · Cancel any time with the payment provider.</p>' +
       (pending ? '<button class="plus-cta plus-cta-btn" id="plusActivate">I\'ve paid — activate Plus</button>' : '') +
       '<p class="plus-note" id="plusMsg" role="status">' + esc(msgText || '') + '</p>' +
-      '<div class="sk-label">Have a redeem code?</div>' +
-      '<div class="plus-unlock-row"><input id="plusCode" type="text" placeholder="XXXXX-XXXXX" autocomplete="off" maxlength="11" aria-label="Redeem code">' +
-      '<button id="plusUnlock" class="sk-j-save">Redeem</button></div>' +
+      redeemHtml +
       '<details class="plus-owner"><summary>Paid on another device?</summary>' +
         '<div class="plus-unlock-row"><input id="plusRestore" type="text" placeholder="32-character restore key" autocomplete="off" maxlength="32" aria-label="Restore key">' +
         '<button id="plusRestoreGo" class="sk-j-save">Restore</button></div></details>' +
@@ -229,7 +402,9 @@
         'No payment option suits you? <a href="' + requestMailto() + '">Request access by email</a> (request ID <b>' + esc(requestId()) + '</b>). ' +
         '<a href="privacy.html">Privacy</a></p>';
 
-    const msg = t => { const m = body.querySelector('#plusMsg'); if (m) m.textContent = t; };
+    wireTrial(body, msg);
+    wireDemand(body, msg);
+    wireRedeem(body, msg);
     body.querySelectorAll('.plus-price').forEach(b => b.addEventListener('click', () => {
       const url = checkoutUrl(b.dataset.period, cur);
       if (!url) { msg('Online checkout opens very soon. Meanwhile, request access by email below and you will get a redeem code.'); return; }
@@ -240,6 +415,29 @@
     body.querySelector('#plusCur').addEventListener('click', () => { const st = load(); st.cur = other; save(st); render(); });
     const act = body.querySelector('#plusActivate');
     if (act) act.addEventListener('click', () => activateFlow(msg));
+    body.querySelector('#plusRestoreGo').addEventListener('click', () => {
+      const k = body.querySelector('#plusRestore').value.trim().toLowerCase();
+      if (!/^[a-f0-9]{32}$/.test(k)) { msg('A restore key is 32 letters and digits (0-9, a-f).'); return; }
+      const st = load(); st.claimId = k; save(st);
+      activateFlow(msg);
+    });
+  }
+
+  function wireTrial(body, msg) {
+    const b = body.querySelector('#plusTrial');
+    if (!b) return;
+    b.addEventListener('click', () => {
+      b.disabled = true;
+      msg('Starting your trial…');
+      startTrial().then(r => {
+        if (r === 'ok') { render(); return; }
+        b.disabled = false;
+        if (r === 'used') { render('This device has already used its free trial.'); return; }
+        msg(r === 'offline' ? 'You seem to be offline. Try again when connected.' : 'Could not start the trial. Please try again later.');
+      });
+    });
+  }
+  function wireRedeem(body, msg) {
     body.querySelector('#plusUnlock').addEventListener('click', () => {
       const code = body.querySelector('#plusCode').value.trim().toUpperCase();
       if (/^[0-9A-F]{4}-[0-9A-F]{4}$/.test(code)) { msg('That is an old-style code, now retired. Email us your request ID and we will send a new redeem code.'); return; }
@@ -249,12 +447,6 @@
     });
     body.querySelector('#plusCode').addEventListener('input', e => {
       e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F-]/g, '');
-    });
-    body.querySelector('#plusRestoreGo').addEventListener('click', () => {
-      const k = body.querySelector('#plusRestore').value.trim().toLowerCase();
-      if (!/^[a-f0-9]{32}$/.test(k)) { msg('A restore key is 32 letters and digits (0-9, a-f).'); return; }
-      const st = load(); st.claimId = k; save(st);
-      activateFlow(msg);
     });
   }
 
@@ -270,6 +462,7 @@
 
   /* returning from checkout: poll a few times quietly */
   function pollPending() {
+    if (!PAYMENTS_ENABLED) return;
     const s = load();
     if (!s.pendingCheckout || tokenLive(s) || Date.now() - s.pendingCheckout.at > 48 * 3600 * 1000) return;
     let tries = 0;
@@ -280,6 +473,33 @@
     tick();
   }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pollPending(); });
+
+  /* ---------- header: days left during the trial ---------- */
+  function renderBadge() {
+    const hdr = document.querySelector('.site-header');
+    if (!hdr) return;
+    let b = document.getElementById('plusTrialBadge');
+    const s = load();
+    const left = !paidOrLegacy(s) && trialLive(s) ? trialDaysLeft() : 0;
+    if (!left) { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'plusTrialBadge';
+      b.className = 'plus-trial-badge';
+      b.addEventListener('click', openSheet);
+      hdr.appendChild(b);
+    }
+    b.textContent = '✨ Plus trial · ' + left + ' day' + (left === 1 ? '' : 's') + ' left';
+  }
+  document.addEventListener('dh-plus-change', renderBadge);
+
+  /* At trial end, ask the demand-test question once, when the app is next opened. */
+  function askAtTrialEnd() {
+    const s = load();
+    if (paidOrLegacy(s) || !trialEnded(s) || s.voted || s.askedAtEnd) return;
+    s.askedAtEnd = Date.now(); save(s);
+    setTimeout(() => { if (window.dhOpenSheet) openSheet(); }, 1200);
+  }
 
   function openSheet() {
     sheetEl();
@@ -292,10 +512,18 @@
     token: token,
     requestId: requestId,
     open: openSheet,
+    startTrial: startTrial,
+    canStartTrial: canStartTrial,
+    trialDaysLeft: trialDaysLeft,
+    paymentsEnabled: PAYMENTS_ENABLED,
     claim: claim,
     pollPending: pollPending,
     renderHome: function () {} // home badge rendered by sankalp.js
   };
 
   verifySoon();
+  function boot() { renderBadge(); askAtTrialEnd(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  // trial expiry while the app stays open: refresh the badge and gates hourly
+  setInterval(() => { const s = load(); if (s.trial && s.trial.token && !trialLive(s)) changed(); renderBadge(); }, 3600 * 1000);
 })();

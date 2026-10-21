@@ -1,22 +1,22 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v47';
+const CACHE = 'divine-hub-v48';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=47',
+  './styles.css?v=48',
   './backnav.js?v=46',
   './app.js?v=46',
   './focus.js?v=46',
   './journeys.js?v=46',
   './sadhana.js?v=46',
-  './plus.js?v=47',
+  './plus.js?v=48',
   './sankalp.js?v=46',
   './quizzes.js?v=46',
   './almanac.js?v=46',
   './panchang.js?v=46',
-  './config.js?v=47',
+  './config.js?v=48',
   './muhurat.js?v=47',
-  './diwali.js?v=47',
+  './diwali.js?v=48',
   './privacy.html',
   './sandhya.js?v=46',
   './ambience.js?v=46',

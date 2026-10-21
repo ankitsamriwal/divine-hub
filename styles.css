@@ -2806,3 +2806,21 @@ body {
 .dw-plus b { color: var(--gold); }
 .footer-links { font-size: 0.8rem; }
 .footer-links a { color: var(--gold); }
+
+/* ---- Sankalp+ free trial + demand test ---- */
+.plus-trial-badge { margin-left: auto; background: rgba(226, 169, 78, 0.12); border: 1px solid rgba(226, 169, 78, 0.45); color: var(--gold); border-radius: 999px; padding: 0.35rem 0.8rem; font-family: inherit; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
+.plus-trial-badge:hover { background: rgba(226, 169, 78, 0.22); }
+.plus-demand { background: var(--ink-2); border: 1px solid rgba(226, 169, 78, 0.35); border-radius: 14px; padding: 0.9rem 1rem; margin: 0.6rem 0; }
+.plus-demand p { color: var(--cream-dim); font-size: 0.92rem; line-height: 1.55; margin: 0.3rem 0 0.6rem; }
+.plus-demand p b { color: var(--gold); }
+.plus-demand-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.plus-demand-row .plus-cta { flex: 1 1 12rem; margin-top: 0; }
+.plus-ghost { flex: 1 1 8rem; background: transparent; border: 1px solid rgba(226, 169, 78, 0.45); color: var(--cream); border-radius: 12px; padding: 0.9rem 1rem; font-family: inherit; font-size: 1rem; cursor: pointer; }
+.plus-ghost:hover { background: rgba(226, 169, 78, 0.1); }
+.plus-demand button:disabled, .plus-cta-btn:disabled { opacity: 0.6; cursor: default; }
+.dw-banner-trial { align-self: center; background: var(--gold); color: var(--ink); border: none; border-radius: 10px; padding: 0.5rem 0.7rem; font-family: inherit; font-weight: 700; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
+.dw-trial-note { color: var(--cream-dim); font-size: 0.78rem; text-align: center; }
+@media (max-width: 480px) {
+  .dw-banner { flex-wrap: wrap; }
+  .dw-banner-trial { margin: 0 0.9rem 0.8rem; flex: 1 0 calc(100% - 1.8rem); order: 3; }
+}

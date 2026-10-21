@@ -1,15 +1,22 @@
 /* Divine Hub — public runtime config. Nothing here is secret: payment LINKS are
    public URLs by design. Secrets (token signing key, webhook secrets, admin key)
-   live only in the Cloudflare worker's env; see docs/PAYMENTS.md.
-   Leave a link as '' until the provider product exists: the Plus sheet then shows
-   "checkout opens soon" and falls back to the email request path. */
+   live only in the Cloudflare worker's env; see docs/LAUNCH.md.
+   Payment links are unused while PAYMENTS_ENABLED is false. */
 window.DH_CONFIG = {
   WORKER_URL: 'https://divine-guide.ankitsamriwal.workers.dev',
 
+  /* PAYMENTS ARE OFF in this release (owner decision): no checkout links or
+     buy buttons are rendered, and the four links below are not used even if
+     filled in. The app offers a 7-day free trial and a demand test instead.
+     To switch payments on later, set this to true AND set the worker var
+     PAYMENTS_ENABLED="true" (docs/LAUNCH.md). Keep both in step. */
+  PAYMENTS_ENABLED: false,
+
+  /* Planned price shown in the demand test (and on the paywall once payments are on). */
   PRICE_MONTHLY_USD: '$1.99', PRICE_YEARLY_USD: '$14.99',
   PRICE_MONTHLY_INR: '₹99',   PRICE_YEARLY_INR: '₹699',
 
-  /* Provider routing (Ankit's decision): India / INR -> Razorpay, everyone else
+  /* DORMANT. Provider routing (Ankit's decision): India / INR -> Razorpay, everyone else
      (USD/AED diaspora) -> Stripe. All four values are PLACEHOLDERS until Ankit
      creates the products; they are public URLs, not secrets.
      Stripe: the app appends ?client_reference_id=<claim id> to the Payment Link.
