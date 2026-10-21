@@ -1,9 +1,9 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v51';
+const CACHE = 'divine-hub-v53';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=51',
+  './styles.css?v=53',
   './config.js?v=48',
   './data.js?v=46',
   './data2.js?v=46',
@@ -28,7 +28,7 @@ const CORE = [
   './almanac.js?v=50',
   './sandhya.js?v=50',
   './japa.js?v=50',
-  './panchang.js?v=50',
+  './panchang.js?v=51',
   './muhurat.js?v=47',
   './diwali.js?v=50',
   './sections.js?v=50',
@@ -38,7 +38,7 @@ const CORE = [
   './calendar.js?v=50',
   './library.js?v=50',
   './today.js?v=50',
-  './shell.js?v=50',
+  './shell.js?v=52',
   './backnav.js?v=50',
   './privacy.html',
   './assets/bells.mp3',
@@ -46,7 +46,7 @@ const CORE = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap'
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap'
 ];
 
 self.addEventListener('install', e => {
