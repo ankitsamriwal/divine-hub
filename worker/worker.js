@@ -1,4 +1,6 @@
 // Divine Hub — Divine Guide proxy worker (Cloudflare, free tier)
+// Also hosts the Sankalp+ entitlement service (see plus.js and docs/PAYMENTS.md).
+import { handlePlusRoute } from './plus.js';
 // Holds the Gemini API key as a worker secret (GEMINI_API_KEY).
 // CORS-locked to the GitHub Pages origin. Best-effort per-IP rate limit
 // (in-memory per isolate; no KV/D1 so the API token needs only Workers Scripts Edit).
@@ -156,6 +158,10 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
 
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/plus/')) {
+      try { const r = await handlePlusRoute(request, env, url, headers, ALLOWED_ORIGINS.has(origin)); if (r) return r; }
+      catch (e) { return new Response(JSON.stringify({ error: 'plus_route_error' }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }); }
+    }
     if (url.pathname.startsWith('/subscribe') || url.pathname.startsWith('/sync') || url.pathname.startsWith('/push-data') || url.pathname.startsWith('/debug-push') || url.pathname.startsWith('/dh-')) {
       try { const r = (await handlePushRoute(request, env, url, headers)) || (await handleDhRoute(request, env, url, headers)); if (r) return r; } catch (e) { return new Response(JSON.stringify({ error: 'push_route_error', detail: String(e && e.message || e).slice(0, 200) }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }); }
     }
