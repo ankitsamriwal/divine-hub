@@ -135,6 +135,7 @@
   function openPrayer(id) {
     const p = PRAYERS.find(x => x.id === id);
     if (!p) return;
+    if (window.dhAura) window.dhAura.stop(null, true);
     currentPrayer = p;
     currentTab = 'dev';
     renderPrayerView();
@@ -146,6 +147,7 @@
 
   function closePrayer() {
     stopSpeech();
+    if (window.dhAura) window.dhAura.stop(null, true);
     prayerView.hidden = true;
     document.body.style.overflow = '';
     currentPrayer = null;
@@ -183,6 +185,7 @@
         <span class="rate-wrap">pace <input type="range" id="ttsRate" min="60" max="110" value="88"></span>
         <span class="listen-note" id="ttsNote"></span>
       </div>
+      ${window.dhAura ? '<div class="aura-pref">' + window.dhAura.toggleHtml() + '</div>' : ''}
       <div class="text-tabs">
         <button class="text-tab active" data-tab="dev">देवनागरी</button>
         <button class="text-tab" data-tab="translit">Transliteration</button>
@@ -192,6 +195,7 @@
 
     renderStanzas();
     renderSung(p);
+    if (window.dhAura) window.dhAura.wireToggle(prayerContent);
 
     prayerContent.querySelectorAll('.text-tab').forEach(t => {
       t.addEventListener('click', () => {
@@ -248,6 +252,9 @@
       frame.allowFullscreen = true;
       frame.referrerPolicy = 'strict-origin-when-cross-origin';
       this.replaceWith(frame);
+      /* the iframe's play state is not observable without the IFrame API:
+         the symbol starts on this tap and stops when the prayer closes */
+      if (window.dhAura) window.dhAura.start(p, slot, 'sung');
     });
   }
   window.dhRenderSung = renderSung;
@@ -349,8 +356,11 @@
 
   window.dhTTS = { pickVoice: pickVoice, voiceGender: voiceGender, DEITY_VOICE_GENDER: DEITY_VOICE_GENDER };
 
+  let currentUtter = null;
   function stopSpeech() {
+    currentUtter = null;
     if (synth) synth.cancel();
+    if (window.dhAura) window.dhAura.stop('tts');
     const note = document.getElementById('ttsNote');
     if (note) note.textContent = '';
   }
@@ -368,6 +378,7 @@
       if (note) note.textContent = 'Audio narration is not supported in this browser.';
       return;
     }
+    currentUtter = null; /* the cancelled utterance's end must not clear the symbol */
     synth.cancel();
     let text, voicePref, langTag;
     if (mode === 'meaning') {
@@ -386,6 +397,9 @@
     u.pitch = 1;
     const v = pickVoice(voicePref, DEITY_VOICE_GENDER[p.deity]);
     if (v) u.voice = v;
+    currentUtter = u;
+    u.onstart = () => { if (currentUtter === u && window.dhAura) window.dhAura.start(p, note, 'tts'); };
+    u.onend = u.onerror = () => { if (currentUtter === u) { currentUtter = null; if (window.dhAura) window.dhAura.stop('tts'); } };
     if (note) {
       if (voicePref === 'hi' && v && !(v.lang || '').toLowerCase().startsWith('hi') && !(v.lang || '').toLowerCase().startsWith('sa')) {
         note.textContent = 'No Hindi voice found on this device — falling back to an English voice. For best results open in Chrome or Edge, which ship Hindi voices.';

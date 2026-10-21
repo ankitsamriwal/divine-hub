@@ -1,9 +1,9 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v50';
+const CACHE = 'divine-hub-v51';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=50',
+  './styles.css?v=51',
   './config.js?v=48',
   './data.js?v=46',
   './data2.js?v=46',
@@ -17,7 +17,8 @@ const CORE = [
   './guides.js?v=46',
   './why.js?v=46',
   './audio.js?v=49',
-  './app.js?v=50',
+  './aura.js?v=51',
+  './app.js?v=51',
   './focus.js?v=46',
   './journeys.js?v=50',
   './sadhana.js?v=50',
@@ -33,7 +34,7 @@ const CORE = [
   './sections.js?v=50',
   './ambience.js?v=46',
   './deities.js?v=50',
-  './session.js?v=50',
+  './session.js?v=51',
   './calendar.js?v=50',
   './library.js?v=50',
   './today.js?v=50',
@@ -76,7 +77,8 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // static assets: cache first, then network (and cache the result)
+  // static assets: cache first, then network (and cache the result).
+  // cdnjs (three.js for the deity aura, aura.js) is not cached: network only; offline the aura falls back to its static SVG.
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       if (res.ok && (url.origin === location.origin || url.hostname.endsWith('googleapis.com') || url.hostname.endsWith('gstatic.com'))) {
