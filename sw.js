@@ -1,9 +1,9 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v50';
+const CACHE = 'divine-hub-v51';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=50',
+  './styles.css?v=51',
   './config.js?v=48',
   './data.js?v=46',
   './data2.js?v=46',
@@ -27,7 +27,7 @@ const CORE = [
   './almanac.js?v=50',
   './sandhya.js?v=50',
   './japa.js?v=50',
-  './panchang.js?v=50',
+  './panchang.js?v=51',
   './muhurat.js?v=47',
   './diwali.js?v=50',
   './sections.js?v=50',
@@ -45,7 +45,7 @@ const CORE = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap'
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap'
 ];
 
 self.addEventListener('install', e => {

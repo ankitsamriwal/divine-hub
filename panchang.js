@@ -1,5 +1,5 @@
-/* Divine Hub — Panchang calendar: running-month tithi calendar with page-flip
-   month navigation, tithi detail cards (rituals + mantra jaap), and push
+/* Divine Hub — Panchang calendar: a wall-panchang month (page-turn navigation,
+   swipe, month-year picker), the day sheet, tithi detail cards (rituals + mantra jaap), and push
    reminders through the divine-guide worker's web-push routes.
    Tithis are computed on-device (Meeus-style lunar/solar positions, good to a
    few minutes of arc). The sunrise rule is used: the tithi prevailing at local
@@ -399,7 +399,14 @@
   var view = { y: now.getFullYear(), m: now.getMonth() };
   var MIN_VIEW = { y: 2025, m: 0 };
   var MAX_VIEW = { y: 2028, m: 11 };
-  var flipBusy = false;
+  var busy = false;
+  var selectedIso = null;
+  var MONTH_CACHE = {};
+  var PAGE_CACHE = {};
+  var WK_DEV = ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'];
+  var DUR = 660;
+  var EASE_UP = 'cubic-bezier(.45,.05,.4,1)';
+  var EASE_DOWN = 'cubic-bezier(.3,.06,.2,1)';
 
   function isoOf(y, m, d) {
     return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
@@ -419,11 +426,15 @@
 
   function sunsetOf(y, m, d) { return new Date(y, m, d, 18, 0, 0, 0); }
 
+  /* one month of rows; cached, since tithis and the festival list never change */
   function monthData(y, m) {
+    var key = y + '-' + m;
+    if (MONTH_CACHE[key]) return MONTH_CACHE[key];
     var dim = daysInMonth(y, m);
     var rows = [];
     for (var d = 1; d <= dim; d++) {
-      var t = tithiInfo(tithiAt(sunriseOf(y, m, d)));
+      var sr = sunriseOf(y, m, d);
+      var t = tithiInfo(tithiAt(sr));
       var t2 = tithiInfo(tithiAt(sunsetOf(y, m, d)));
       var g1 = cardGuide(t);
       var g2 = t2.index !== t.index ? cardGuide(t2) : null;
@@ -439,207 +450,617 @@
         primary: primary,
         guide: g,
         important: !!((g1 && g1.important) || (g2 && g2.important)),
-        festivals: festivalsOn(isoOf(y, m, d))
+        festivals: festivalsOn(isoOf(y, m, d)),
+        elong: elongationAt(sr)
       });
     }
+    MONTH_CACHE[key] = rows;
     return rows;
   }
+  function rowFor(iso) {
+    var p = iso.split('-').map(Number);
+    return monthData(p[0], p[1] - 1)[p[2] - 1] || null;
+  }
 
-  /* ---------- rendering ---------- */
+  /* ---------- small helpers ---------- */
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-
-  var TITHI_CELL = {
-    Pratipada: 'Prat.', Dwitiya: 'Dwit.', Tritiya: 'Trit.', Chaturthi: 'Chatur.',
-    Panchami: 'Panch.', Shashthi: 'Shash.', Saptami: 'Sapt.', Ashtami: 'Asht.',
-    Navami: 'Nav.', Dashami: 'Dash.', Ekadashi: 'Ekad.', Dwadashi: 'Dwad.',
-    Trayodashi: 'Trayo.', Chaturdashi: 'Chaturd.', Purnima: 'Purnima', Amavasya: 'Amavasya'
-  };
-  function cellTithi(t) { return (t.paksha === 'Shukla' ? 'S. ' : 'K. ') + (TITHI_CELL[t.name] || t.name); }
-  function cellFestival(name) {
-    return String(name).replace(/Chaturthi/g, 'Chatur.').replace(/Janmashtami/g, 'Janmasht.');
+  function vIdx(y, m) { return y * 12 + m; }
+  function fromIdx(i) { return { y: Math.floor(i / 12), m: ((i % 12) + 12) % 12 }; }
+  function inRange(y, m) {
+    var i = vIdx(y, m);
+    return i >= vIdx(MIN_VIEW.y, MIN_VIEW.m) && i <= vIdx(MAX_VIEW.y, MAX_VIEW.m);
   }
+  function todayIso() { var t = new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); }
+  function reducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function $(sel, root) { return (root || document).querySelector(sel); }
 
+  /* ---------- glyphs (drawn, never emoji) ---------- */
+  /* moon drawn to the actual phase: elongation in degrees, lit limb on the
+     right while waxing and on the left while waning */
+  function moonSVG(elong, kind, size) {
+    var e = norm360(elong), k = Math.cos(e * d2r), rx = (Math.abs(k) * 10).toFixed(2);
+    var waxing = e < 180, gibbous = k < 0, lit;
+    if (waxing) lit = 'M0,-10A10,10 0 0 1 0,10A' + rx + ',10 0 0 ' + (gibbous ? 1 : 0) + ' 0,-10Z';
+    else lit = 'M0,-10A10,10 0 0 0 0,10A' + rx + ',10 0 0 ' + (gibbous ? 0 : 1) + ' 0,-10Z';
+    var s = size || 11;
+    var body = kind === 'purnima' ? '<circle r="10" class="wm-full"/>' :
+      kind === 'amavasya' ? '<circle r="9.4" class="wm-new"/>' :
+      '<circle r="10" class="wm-dark"/><path d="' + lit + '" class="wm-lit"/>';
+    return '<svg class="wp-moon' + (kind ? ' wm-' + kind : '') + '" viewBox="-12 -12 24 24" width="' + s + '" height="' + s +
+      '" aria-hidden="true" focusable="false">' + body + '</svg>';
+  }
+  var LEAF = '<svg class="wp-leaf-g" viewBox="0 0 12 12" width="9" height="9" aria-hidden="true" focusable="false">' +
+    '<path d="M1.6 10.4C1.6 5.2 4.8 1.6 10.6 1.4 10.6 7 7.2 10.4 1.6 10.4Z"/><path class="vein" d="M1.6 10.4 7.6 4.4"/></svg>';
+  var DIYA = '<svg class="wp-diya" viewBox="0 0 16 14" width="11" height="10" aria-hidden="true" focusable="false">' +
+    '<path class="fl" d="M8 .6C9.9 3.3 10 5 8 6.9 6 5 6.1 3.3 8 .6Z"/><path class="bw" d="M1.2 7.8H14.8C14 11.2 11.3 13 8 13S2 11.2 1.2 7.8Z"/></svg>';
+  var CHEV_L = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
+  var CHEV_R = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>';
+  var CARET = '<svg class="wp-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false"><path d="M3 4.5 6 7.5 9 4.5"/></svg>';
+  var BELL = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15L6 16.5Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
+  var CLOSE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+
+  function shortFest(name) {
+    return String(name).replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s*\/.*$/, '').replace(/\s+/g, ' ').trim();
+  }
+  /* the cell names a festival before a named new or full moon */
+  function pickFest(list) {
+    if (!list.length) return null;
+    for (var i = 0; i < list.length; i++) if (!/Amavasya|Poornima|Purnima/.test(list[i].name)) return list[i];
+    return list[0];
+  }
+  function moonKind(t) { return t.name === 'Purnima' ? 'purnima' : t.name === 'Amavasya' ? 'amavasya' : ''; }
+
+  /* ---------- page rendering ---------- */
   function cellHTML(r) {
-    var today = new Date();
-    var isToday = r.iso === isoOf(today.getFullYear(), today.getMonth(), today.getDate());
-    var cls = 'pk-cell' + (r.important ? ' pk-imp' : '') + (isToday ? ' pk-today' : '') +
-      (r.festivals.length ? ' pk-fest' : '') + ' pk-paksha-' + (r.primary.paksha === 'Shukla' ? 'light' : 'dark');
-    var short = cellTithi(r.tithi);
-    if (r.tithiLater) {
-      var later = TITHI_CELL[r.tithiLater.name] || r.tithiLater.name;
-      short += ' \u25B8 ' + (r.tithiLater.paksha === r.tithi.paksha ? '' :
-        (r.tithiLater.paksha === 'Shukla' ? 'S. ' : 'K. ')) + later;
-    }
-    var bell = reminderFor(r.iso) ? '🔔' : '🔕';
-    return '<button class="' + cls + '" data-iso="' + r.iso + '" aria-label="' +
-      esc(fmtISO(r.iso) + ' ' + r.tithi.paksha + ' ' + r.tithi.name) + '">' +
-      '<span class="pk-date">' + r.d + '</span>' +
-      '<span class="pk-tithi">' + esc(short) + '</span>' +
-      (r.festivals.length ? '<span class="pk-festname">' + esc(cellFestival(r.festivals[0].name)) + '</span>' : '') +
-      (r.festivals.length ? '<span class="pk-festdot" title="' + esc(r.festivals.map(function (f) { return f.name; }).join(', ')) + '">🪔</span>' : '') +
-      (r.important ? '<span class="pk-bell" data-iso="' + r.iso + '" role="button" aria-label="Reminder for ' + esc(fmtISO(r.iso)) + '">' + bell + '</span>' : '') +
+    var t = r.tithi, kind = moonKind(t), ek = t.name === 'Ekadashi';
+    var g = cardGuide(t), f = pickFest(r.festivals);
+    var cls = 'wp-day' + (g && g.important ? ' is-vrat' : '') + (kind ? ' is-' + kind : '') +
+      (ek ? ' is-ekadashi' : '') + (f ? ' is-fest' : '') + (r.weekday === 0 ? ' is-sun' : '');
+    var label = fmtISO(r.iso) + ', ' + t.paksha + ' ' + t.name +
+      (r.tithiLater ? ', then ' + r.tithiLater.paksha + ' ' + r.tithiLater.name : '') +
+      (r.festivals.length ? ', ' + r.festivals.map(function (x) { return x.name; }).join(', ') : '');
+    return '<button type="button" class="' + cls + '" data-iso="' + r.iso + '" aria-label="' + esc(label) + '">' +
+      '<span class="wp-day-top"><span class="wp-num">' + r.d + '</span><span class="wp-glyphs">' +
+        moonSVG(r.elong, kind) + (ek ? LEAF : '') + '</span></span>' +
+      '<span class="wp-tithi"><span class="wp-tt" lang="hi">' + TITHI_DEV[t.name] + '</span>' +
+        (r.tithiLater ? '<i class="wp-chg" aria-hidden="true"></i>' : '') + '</span>' +
+      (f ? '<span class="wp-fl">' + DIYA + '<span class="wp-fn">' + esc(shortFest(f.name)) + '</span></span>' : '') +
       '</button>';
   }
 
-  function gridHTML(y, m) {
-    var rows = monthData(y, m);
-    var firstWeekday = new Date(y, m, 1).getDay();
-    var html = '<div class="pk-weekdays">' + WEEKDAYS.map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</div>';
-    html += '<div class="pk-grid">';
-    for (var i = 0; i < firstWeekday; i++) html += '<span class="pk-cell pk-empty"></span>';
-    rows.forEach(function (r) { html += cellHTML(r); });
-    html += '</div>';
+  function pageHTML(y, m) {
+    var key = y + '-' + m;
+    if (PAGE_CACHE[key]) return PAGE_CACHE[key];
+    var rows = monthData(y, m), first = new Date(y, m, 1).getDay(), cells = '', n = 0, i;
+    for (i = 0; i < first; i++, n++) cells += '<span class="wp-day is-blank" aria-hidden="true"></span>';
+    rows.forEach(function (r) { cells += cellHTML(r); n++; });
+    var tail = n <= 35;
+    for (; n < (tail ? 35 : 42); n++) cells += '<span class="wp-day is-blank" aria-hidden="true"></span>';
+    /* a five-week month keeps the sixth row as a quiet ornamental band, so every page is the same height */
+    if (tail) cells += '<span class="wp-day is-blank wp-tail" aria-hidden="true"><i></i><b lang="hi">॥ शुभम् ॥</b><i></i></span>';
+    var pi = fromIdx(vIdx(y, m) - 1), ni = fromIdx(vIdx(y, m) + 1);
+    var html = '<div class="wp-face">' +
+      '<span class="wp-corner c-tl" aria-hidden="true"></span><span class="wp-corner c-tr" aria-hidden="true"></span>' +
+      '<span class="wp-corner c-bl" aria-hidden="true"></span><span class="wp-corner c-br" aria-hidden="true"></span>' +
+      '<header class="wp-head">' +
+        '<button type="button" class="wp-arrow" data-act="prev" aria-label="Previous month, ' + MONTHS[pi.m] + ' ' + pi.y + '"' +
+          (inRange(pi.y, pi.m) ? '' : ' disabled') + '>' + CHEV_L + '</button>' +
+        '<button type="button" class="wp-title" data-act="pick" aria-haspopup="dialog" aria-expanded="false" aria-label="' +
+          MONTHS[m] + ' ' + y + '. Choose month and year">' +
+          '<span class="wp-kicker" lang="hi">पंचांग</span>' +
+          '<span class="wp-month">' + MONTHS[m] + '</span>' +
+          '<span class="wp-year">' + y + CARET + '</span></button>' +
+        '<button type="button" class="wp-arrow" data-act="next" aria-label="Next month, ' + MONTHS[ni.m] + ' ' + ni.y + '"' +
+          (inRange(ni.y, ni.m) ? '' : ' disabled') + '>' + CHEV_R + '</button>' +
+      '</header>' +
+      '<div class="wp-orn" aria-hidden="true"><span></span><b></b><span></span></div>' +
+      '<div class="wp-wk" aria-hidden="true">' + WEEKDAYS.map(function (w, k) {
+        return '<span' + (k === 0 ? ' class="is-sun"' : '') + '><b>' + w + '</b><i lang="hi">' + WK_DEV[k] + '</i></span>';
+      }).join('') + '</div>' +
+      '<div class="wp-grid">' + cells + '</div>' +
+      '<span class="wp-gloss" aria-hidden="true"></span><span class="wp-shade" aria-hidden="true"></span>' +
+      '</div><div class="wp-back" aria-hidden="true"><span class="wp-back-mark" lang="hi">ॐ</span></div>';
+    PAGE_CACHE[key] = html;
     return html;
   }
 
+  function decorate(leaf) {
+    var t = todayIso();
+    leaf.querySelectorAll('.wp-day[data-iso]').forEach(function (c) {
+      var isT = c.dataset.iso === t;
+      c.classList.toggle('is-today', isT);
+      if (isT) c.setAttribute('aria-current', 'date'); else c.removeAttribute('aria-current');
+      c.classList.toggle('is-selected', c.dataset.iso === selectedIso);
+    });
+  }
+
+  function makeLeaf(y, m) {
+    var el = document.createElement('div');
+    el.className = 'wp-leaf';
+    el.dataset.y = y;
+    el.dataset.m = m;
+    el.innerHTML = pageHTML(y, m);
+    decorate(el);
+    return el;
+  }
+
+  function stageEl() { return document.getElementById('pkStage'); }
+  function liveLeaf() { var s = stageEl(); return s ? s.lastElementChild : null; }
+
+  function announce(y, m) {
+    var live = document.getElementById('pkLive');
+    if (live) live.textContent = MONTHS[m] + ' ' + y;
+  }
+
   function renderMonth(y, m) {
-    var page = document.getElementById('pkPage');
-    if (!page) return;
-    page.innerHTML = gridHTML(y, m);
-    var label = document.getElementById('pkMonthLabel');
-    if (label) label.textContent = MONTHS[m] + ' ' + y;
-    var prev = document.getElementById('pkPrev');
-    var next = document.getElementById('pkNext');
-    if (prev) prev.disabled = (y === MIN_VIEW.y && m === MIN_VIEW.m);
-    if (next) next.disabled = (y === MAX_VIEW.y && m === MAX_VIEW.m);
-    bindCells();
+    var s = stageEl();
+    if (!s) return;
+    s.innerHTML = '';
+    s.appendChild(makeLeaf(y, m));
     try { document.dispatchEvent(new CustomEvent('dh-month', { detail: { y: y, m: m } })); } catch (e) {}
   }
 
-  function flip(dir) {
-    if (flipBusy) return;
-    var ny = view.y, nm = view.m + dir;
-    if (nm < 0) { nm = 11; ny--; }
-    if (nm > 11) { nm = 0; ny++; }
-    if (ny < MIN_VIEW.y || (ny === MIN_VIEW.y && nm < MIN_VIEW.m)) return;
-    if (ny > MAX_VIEW.y || (ny === MAX_VIEW.y && nm > MAX_VIEW.m)) return;
-    var page = document.getElementById('pkPage');
-    if (!page) { view = { y: ny, m: nm }; renderMonth(ny, nm); return; }
-    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) { view = { y: ny, m: nm }; renderMonth(ny, nm); return; }
-    flipBusy = true;
-    var outCls = dir > 0 ? 'pk-flip-out-next' : 'pk-flip-out-prev';
-    var inCls = dir > 0 ? 'pk-flip-in-next' : 'pk-flip-in-prev';
-    page.classList.add(outCls);
-    setTimeout(function () {
-      view = { y: ny, m: nm };
-      renderMonth(ny, nm);
-      page.classList.remove(outCls);
-      page.classList.add(inCls);
-      setTimeout(function () {
-        page.classList.remove(inCls);
-        flipBusy = false;
-      }, 230);
-    }, 230);
+  /* warm the neighbours so the first flip has nothing to compute */
+  function prefetch(y, m) {
+    var run = function () {
+      [-1, 1].forEach(function (d) { var v = fromIdx(vIdx(y, m) + d); if (inRange(v.y, v.m)) pageHTML(v.y, v.m); });
+    };
+    if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 800 }); else setTimeout(run, 120);
   }
 
-  function paintBells() {
-    var rem = loadReminders();
-    document.querySelectorAll('#pkPage .pk-bell').forEach(function (b) {
-      var on = rem.some(function (r) { return r.date === b.dataset.iso; });
-      b.textContent = on ? '🔔' : '🔕';
-    });
-    var cb = document.getElementById('pkCardBell');
-    if (cb && cb.dataset.iso) {
-      var on2 = rem.some(function (r) { return r.date === cb.dataset.iso; });
-      cb.textContent = on2 ? '🔔 Reminder on' : '🔕 Set reminder';
-      cb.classList.toggle('on', on2);
+  /* ---------- page turn ---------- */
+  /* a leaf rotates about its top edge (rotateX). 0deg = hanging flat;
+     180deg = flipped up and over the binding. The face hides past 90deg,
+     the blank back shows and fades as it passes over the top. */
+  function backOpacity(a) { return a <= 112 ? 1 : Math.max(0, 1 - (a - 112) / 58); }
+  function glossOpacity(a) { return Math.sin(Math.min(Math.max(a, 0), 90) * d2r); }
+  function shadeOpacity(a) { return a >= 160 ? 0 : 0.62 * Math.pow(1 - a / 160, 1.4); }
+
+  function partsOf(st) {
+    return {
+      back: st.top.querySelector('.wp-back'),
+      gloss: st.top.querySelector('.wp-gloss'),
+      shade: st.under ? st.under.querySelector('.wp-shade') : null
+    };
+  }
+  function setAngle(st, a) {
+    var p = partsOf(st);
+    st.top.style.transform = 'rotateX(' + a.toFixed(2) + 'deg)';
+    if (p.back) p.back.style.opacity = backOpacity(a);
+    if (p.gloss) p.gloss.style.opacity = glossOpacity(a);
+    if (p.shade) p.shade.style.opacity = shadeOpacity(a);
+  }
+  function turn(st, a0, a1, dur, easing, delay) {
+    st.top.classList.add('is-turning');
+    if (!st.top.animate) { setAngle(st, a1); st.top.classList.remove('is-turning'); return Promise.resolve(); }
+    var p = partsOf(st), n = 10, fl = [], fb = [], fg = [], fs = [];
+    for (var i = 0; i <= n; i++) {
+      var a = a0 + (a1 - a0) * i / n;
+      fl.push({ transform: 'rotateX(' + a.toFixed(2) + 'deg)' });
+      fb.push({ opacity: backOpacity(a) });
+      fg.push({ opacity: glossOpacity(a) });
+      fs.push({ opacity: shadeOpacity(a) });
     }
-  }
-
-  function bindCells() {
-    document.querySelectorAll('#pkPage .pk-cell[data-iso]').forEach(function (c) {
-      c.addEventListener('click', function (e) {
-        if (e.target.classList && e.target.classList.contains('pk-bell')) return;
-        openCard(c.dataset.iso);
-      });
-    });
-    document.querySelectorAll('#pkPage .pk-bell').forEach(function (b) {
-      b.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var iso = b.dataset.iso;
-        var p = iso.split('-');
-        var t = tithiInfo(tithiAt(sunriseOf(+p[0], +p[1] - 1, +p[2])));
-        toggleReminder(iso, t.name, t.paksha, b);
-      });
+    var opt = { duration: dur, easing: easing, delay: delay || 0, fill: 'both' };
+    var anims = [st.top.animate(fl, opt)];
+    if (p.back) anims.push(p.back.animate(fb, opt));
+    if (p.gloss) anims.push(p.gloss.animate(fg, opt));
+    if (p.shade) anims.push(p.shade.animate(fs, opt));
+    return Promise.all(anims.map(function (x) { return x.finished; })).then(function () {
+      setAngle(st, a1);
+      anims.forEach(function (x) { x.cancel(); });
+      st.top.classList.remove('is-turning');
     });
   }
 
-  /* ---------- detail card ---------- */
+  function singleTurn(dir, y, m) {
+    var s = stageEl(), cur = liveLeaf(), leaf = makeLeaf(y, m);
+    leaf.dataset.dest = '1';
+    if (dir > 0) {
+      s.insertBefore(leaf, cur);
+      return turn({ top: cur, under: leaf }, 0, 180, DUR, EASE_UP);
+    }
+    s.appendChild(leaf);
+    var st = { top: leaf, under: cur };
+    setAngle(st, 180);
+    return turn(st, 180, 0, DUR, EASE_DOWN);
+  }
+
+  /* year jumps: a quick riffle of four pages */
+  function riffle(from, to) {
+    var s = stageEl(), cur = liveLeaf(), dir = to > from ? 1 : -1, ids = [], seen = {};
+    for (var k = 1; k < 4; k++) {
+      var i = Math.round(from + (to - from) * k / 4);
+      if (i !== from && i !== to && !seen[i]) { seen[i] = 1; ids.push(i); }
+    }
+    var dest = fromIdx(to), target = makeLeaf(dest.y, dest.m), fillers, chain, dur = 360, gap = 120;
+    target.dataset.dest = '1';
+    fillers = ids.map(function (i) { var v = fromIdx(i); return makeLeaf(v.y, v.m); });
+    if (dir > 0) {
+      /* bottom to top: target, last filler ... first filler, current */
+      s.insertBefore(target, cur);
+      for (var a = fillers.length - 1; a >= 0; a--) s.insertBefore(fillers[a], cur);
+      chain = [cur].concat(fillers);
+      return Promise.all(chain.map(function (leaf, j) {
+        var under = j + 1 < chain.length ? chain[j + 1] : target;
+        return turn({ top: leaf, under: under }, 0, 180, dur, EASE_UP, j * gap);
+      }));
+    }
+    /* backward: pages fall down onto the current one, the target last */
+    chain = fillers.concat([target]);
+    chain.forEach(function (leaf) { s.appendChild(leaf); setAngle({ top: leaf }, 180); });
+    return Promise.all(chain.map(function (leaf, j) {
+      var under = j === 0 ? cur : chain[j - 1];
+      return turn({ top: leaf, under: under }, 180, 0, dur, EASE_DOWN, j * gap);
+    }));
+  }
+
+  function crossfade(y, m) {
+    var s = stageEl(), leaf = makeLeaf(y, m);
+    leaf.dataset.dest = '1';
+    s.appendChild(leaf);
+    if (!leaf.animate) return Promise.resolve();
+    return leaf.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'linear' }).finished;
+  }
+
+  function finalize(y, m, focusAct) {
+    var s = stageEl(), keep = s.querySelector('.wp-leaf[data-dest]') || liveLeaf();
+    Array.prototype.slice.call(s.children).forEach(function (c) { if (c !== keep) s.removeChild(c); });
+    delete keep.dataset.dest;
+    keep.style.transform = '';
+    keep.querySelectorAll('.wp-back,.wp-gloss,.wp-shade').forEach(function (x) { x.style.opacity = ''; });
+    view = { y: y, m: m };
+    decorate(keep);
+    announce(y, m);
+    if (focusAct) {
+      var f = keep.querySelector('[data-act="' + focusAct + '"]:not([disabled])') || keep.querySelector('[data-act="pick"]');
+      if (f) f.focus({ preventScroll: true });
+    }
+    try { document.dispatchEvent(new CustomEvent('dh-month', { detail: { y: y, m: m } })); } catch (e) {}
+    prefetch(y, m);
+  }
+
+  function goTo(y, m, how) {
+    if (busy || !inRange(y, m)) return;
+    var from = vIdx(view.y, view.m), to = vIdx(y, m);
+    if (from === to) return;
+    var s = stageEl();
+    if (!s || !liveLeaf()) { view = { y: y, m: m }; renderMonth(y, m); return; }
+    var ae = document.activeElement, focusAct = (ae && s.contains(ae) && ae.dataset && ae.dataset.act) || null;
+    busy = true;
+    var job = reducedMotion() ? crossfade(y, m) :
+      how === 'riffle' ? riffle(from, to) : singleTurn(to > from ? 1 : -1, y, m);
+    job.catch(function () {}).then(function () { finalize(y, m, focusAct); busy = false; });
+  }
+
+  function flip(dir) {
+    var v = fromIdx(vIdx(view.y, view.m) + dir);
+    goTo(v.y, v.m);
+  }
+
+  /* ---------- swipe: drag lifts the page, release completes or snaps back ---------- */
+  function wireDrag(s) {
+    var drag = null, suppressUntil = 0;
+    s.addEventListener('pointerdown', function (e) {
+      if (busy || e.button !== 0 || e.isPrimary === false || pickerOpen()) return;
+      drag = { x0: e.clientX, y0: e.clientY, id: e.pointerId, active: false, lx: e.clientX, lt: e.timeStamp, v: 0 };
+    });
+    s.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+      if (!drag.active) {
+        if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) {
+          if (Math.abs(dy) > 14) drag = null;
+          return;
+        }
+        var dir = dx < 0 ? 1 : -1, v = fromIdx(vIdx(view.y, view.m) + dir);
+        if (!inRange(v.y, v.m) || busy) { drag = null; return; }
+        drag.active = true;
+        drag.dir = dir;
+        drag.dest = v;
+        busy = true;
+        try { s.setPointerCapture(e.pointerId); } catch (x) {}
+        if (!reducedMotion()) {
+          var cur = liveLeaf(), leaf = makeLeaf(v.y, v.m);
+          leaf.dataset.dest = '1';
+          if (dir > 0) { s.insertBefore(leaf, cur); drag.st = { top: cur, under: leaf }; }
+          else { s.appendChild(leaf); drag.st = { top: leaf, under: cur }; setAngle(drag.st, 180); }
+          drag.st.top.classList.add('is-turning');
+        }
+      }
+      var dt = Math.max(1, e.timeStamp - drag.lt);
+      drag.v = 0.7 * drag.v + 0.3 * ((e.clientX - drag.lx) / dt);
+      drag.lx = e.clientX; drag.lt = e.timeStamp;
+      var w = s.getBoundingClientRect().width || 320;
+      var p = Math.max(0, Math.min(1, (-dx * drag.dir) / (w * 0.75)));
+      drag.p = p;
+      if (drag.st) setAngle(drag.st, drag.dir > 0 ? p * 150 : 180 - p * 180);
+      e.preventDefault();
+    });
+    function end(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var d = drag;
+      drag = null;
+      if (!d.active) return;
+      suppressUntil = Date.now() + 350;
+      var fling = Math.abs(d.v) > 0.45 && (d.v < 0 ? 1 : -1) === d.dir;
+      var commit = (d.p || 0) > 0.3 || fling;
+      if (!d.st) { /* reduced motion */
+        busy = false;
+        if (commit) goTo(d.dest.y, d.dest.m);
+        return;
+      }
+      var a = d.dir > 0 ? (d.p || 0) * 150 : 180 - (d.p || 0) * 180;
+      var goal = commit ? (d.dir > 0 ? 180 : 0) : (d.dir > 0 ? 0 : 180);
+      var dur = Math.max(180, Math.round(DUR * Math.abs(goal - a) / 180));
+      turn(d.st, a, goal, dur, commit ? 'cubic-bezier(.2,.6,.25,1)' : 'cubic-bezier(.3,.7,.3,1)').then(function () {
+        if (commit) { finalize(d.dest.y, d.dest.m, null); }
+        else {
+          var s2 = stageEl(), extra = s2.querySelector('.wp-leaf[data-dest]');
+          if (extra) s2.removeChild(extra);
+          var lv = liveLeaf();
+          lv.style.transform = '';
+          lv.querySelectorAll('.wp-back,.wp-gloss,.wp-shade').forEach(function (x) { x.style.opacity = ''; });
+        }
+        busy = false;
+      });
+    }
+    s.addEventListener('pointerup', end);
+    s.addEventListener('pointercancel', end);
+    s.addEventListener('click', function (e) {
+      if (Date.now() < suppressUntil) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  }
+
+  /* ---------- month-year picker ---------- */
+  var picker = null, pickYear = 0;
+  function pickerOpen() { return !!(picker && !picker.hidden); }
+  function buildPicker() {
+    if (picker) return picker;
+    picker = document.createElement('div');
+    picker.className = 'wp-picker';
+    picker.id = 'pkPicker';
+    picker.hidden = true;
+    picker.setAttribute('role', 'dialog');
+    picker.setAttribute('aria-label', 'Choose month and year');
+    picker.innerHTML = '<div class="wp-pk-year">' +
+      '<button type="button" class="wp-pk-step" data-py="-1" aria-label="Previous year">' + CHEV_L + '</button>' +
+      '<span class="wp-pk-y" id="pkPickYear" aria-live="polite"></span>' +
+      '<button type="button" class="wp-pk-step" data-py="1" aria-label="Next year">' + CHEV_R + '</button></div>' +
+      '<div class="wp-pk-months" id="pkPickMonths"></div>';
+    var wall = document.getElementById('panchangSection');
+    wall.appendChild(picker);
+    picker.addEventListener('click', function (e) {
+      var st = e.target.closest('[data-py]');
+      if (st) { pickYear += +st.dataset.py; paintPicker(); return; }
+      var mb = e.target.closest('[data-pm]');
+      if (mb && !mb.disabled) {
+        var y = pickYear, m = +mb.dataset.pm, sameYear = y === view.y;
+        closePicker(false);
+        goTo(y, m, sameYear ? null : 'riffle');
+      }
+    });
+    picker.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.stopPropagation(); closePicker(true); }
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (pickerOpen() && !picker.contains(e.target) && !e.target.closest('[data-act="pick"]')) closePicker(false);
+    });
+    return picker;
+  }
+  function paintPicker() {
+    document.getElementById('pkPickYear').textContent = pickYear;
+    picker.querySelector('[data-py="-1"]').disabled = pickYear <= MIN_VIEW.y;
+    picker.querySelector('[data-py="1"]').disabled = pickYear >= MAX_VIEW.y;
+    document.getElementById('pkPickMonths').innerHTML = MONTHS.map(function (name, m) {
+      var on = pickYear === view.y && m === view.m;
+      return '<button type="button" data-pm="' + m + '" class="' + (on ? 'is-on' : '') + '"' + (on ? ' aria-current="true"' : '') +
+        (inRange(pickYear, m) ? '' : ' disabled') + ' aria-label="' + name + ' ' + pickYear + '">' + name.slice(0, 3) + '</button>';
+    }).join('');
+  }
+  function openPicker() {
+    if (busy) return;
+    buildPicker();
+    pickYear = view.y;
+    paintPicker();
+    picker.hidden = false;
+    var t = liveLeaf() && liveLeaf().querySelector('[data-act="pick"]');
+    if (t) t.setAttribute('aria-expanded', 'true');
+    var f = picker.querySelector('.is-on') || picker.querySelector('[data-pm]:not([disabled])');
+    if (f) f.focus({ preventScroll: true });
+  }
+  function closePicker(refocus) {
+    if (!picker) return;
+    picker.hidden = true;
+    var t = liveLeaf() && liveLeaf().querySelector('[data-act="pick"]');
+    if (t) { t.setAttribute('aria-expanded', 'false'); if (refocus) t.focus({ preventScroll: true }); }
+  }
+
+  /* ---------- reminders state in the day sheet ---------- */
+  function paintBells() {
+    var cb = document.getElementById('pkCardBell');
+    if (!cb || !cb.dataset.iso) return;
+    var on = reminderFor(cb.dataset.iso);
+    cb.innerHTML = BELL + '<span>' + (on ? 'Reminder set' : 'Remind me') + '</span>';
+    cb.classList.toggle('is-on', on);
+    cb.setAttribute('aria-pressed', String(on));
+    var badge = document.getElementById('pkCardRem');
+    if (badge) badge.hidden = !on;
+  }
+
+  /* ---------- day sheet ---------- */
+  function sadhanaFor(r, fests) {
+    var D = window.DH_DEITY;
+    if (!D) return null;
+    for (var i = 0; i < fests.length; i++) {
+      var fr = D.festivalRoom(fests[i]);
+      if (fr && fr.aarti) return { room: fr, aartiId: D.festivalAarti(fests[i]) || fr.aarti, title: fests[i].dev + ' · ' + fests[i].name };
+    }
+    var g = cardGuide(r.primary);
+    if (g) {
+      var names = g.deity.split('·').map(function (s) { return s.trim().replace(/\s*\(.*$/, ''); });
+      for (var j = 0; j < names.length; j++) {
+        var rm = D.roomFor(names[j]);
+        if (rm && rm.id !== 'others' && rm.aarti) {
+          return { room: rm, aartiId: rm.aarti, title: (r.primary.paksha === 'Shukla' ? 'शुक्ल ' : 'कृष्ण ') + TITHI_DEV[r.primary.name] + ' · ' + r.primary.name };
+        }
+      }
+    }
+    var wd = D.WEEKDAY[r.weekday], room = wd && D.byId(wd.room);
+    return room ? { room: room, aartiId: room.aarti, title: wd.dev + ' · ' + wd.en } : null;
+  }
+
+  var lastCellIso = null;
   function openCard(iso) {
     var p = iso.split('-').map(Number);
     var y = p[0], m = p[1] - 1, d = p[2];
-    var sr = sunriseOf(y, m, d);
-    var t0 = tithiInfo(tithiAt(sr));
-    var t2 = tithiInfo(tithiAt(sunsetOf(y, m, d)));
-    var g0 = cardGuide(t0);
-    var g2 = t2.index !== t0.index ? cardGuide(t2) : null;
-    var t = (g2 && g2.important && !(g0 && g0.important)) ? t2 : t0;
-    var g = cardGuide(t) || g0 || g2;
-    var timeline = tithiTimeline(y, m, d);
-    var fests = festivalsOn(iso);
+    var r = rowFor(iso);
     var overlay = document.getElementById('pkCardOverlay');
     var card = document.getElementById('pkCard');
-    if (!overlay || !card) return;
+    if (!overlay || !card || !r) return;
+    var t = r.tithi, kind = moonKind(t);
+    var g = cardGuide(r.primary);
+    var fests = r.festivals;
+    var timeline = tithiTimeline(y, m, d);
+    var M = window.dhMuhurat, city = M ? M.getCity() : null;
+    var w = M ? M.daily(city, y, m, d) : null;
+    var isToday = iso === todayIso();
+    var plusOn = !!(window.dhPlus && window.dhPlus.isActive && window.dhPlus.isActive());
+    /* same rule as the rest of the app: today, festival and vrat days are free; any other date is Plus */
+    var timesFree = isToday || fests.length > 0 || r.important;
+    var nak = window.dhAlmanac ? window.dhAlmanac.nakshatraOf(w ? w.sunrise : sunriseOf(y, m, d)) : null;
+    var D = window.DH_DEITY, wdDev = D && D.WEEKDAY[r.weekday] ? D.WEEKDAY[r.weekday].dev + ' · ' : '';
+    var sad = sadhanaFor(r, fests);
+    var pk = function (x) { return x.paksha === 'Shukla' ? 'शुक्ल' : 'कृष्ण'; };
 
-    var tName = t.paksha + ' ' + t.name;
-    var html = '';
-    html += '<button class="pk-card-close" id="pkCardClose" aria-label="Close">✕</button>';
-    html += '<div class="pk-card-date">' + esc(new Date(y, m, d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</div>';
-    html += '<div class="pk-card-tithi">' + (g ? g.glyph + ' ' : '') + esc(tName) + ' <span class="pk-card-dev">' + esc((t.paksha === 'Shukla' ? 'शुक्ल ' : 'कृष्ण ') + (TITHI_DEV[t.name] || '')) + '</span></div>';
-    html += '<div class="pk-card-deity">' + esc(g ? g.deity : '—') + '</div>';
+    var h = '<div class="wsh-grab" aria-hidden="true"></div>' +
+      '<button type="button" class="wsh-close" id="pkCardClose" aria-label="Close">' + CLOSE + '</button>' +
+      '<p class="wsh-date"><span lang="hi">' + esc(wdDev) + '</span>' +
+        esc(new Date(y, m, d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
+      '<div class="wsh-hero">' + moonSVG(r.elong, kind, 46) +
+        '<div class="wsh-hero-txt"><h2 class="wsh-tithi" id="pkCardTitle" lang="hi">' + pk(t) + ' ' + TITHI_DEV[t.name] + '</h2>' +
+        '<p class="wsh-tithi-en">' + esc(t.paksha + ' ' + t.name) + ' at sunrise' + (cardGuide(t) ? ' · ' + esc(cardGuide(t).deity) : '') + '</p>' +
+        '<p class="wsh-badges">' + (isToday ? '<span class="wsh-badge is-today">Today</span>' : '') +
+          (t.name === 'Ekadashi' ? '<span class="wsh-badge">' + LEAF + ' Ekadashi vrat</span>' : '') +
+          '<span class="wsh-badge is-rem" id="pkCardRem" hidden>' + BELL + ' Reminder set</span></p>' +
+        '</div></div>';
+
     if (fests.length) {
-      html += '<div class="pk-card-fest">🪔 ' + fests.map(function (f) {
-        return '<button type="button" class="pk-card-festbtn" data-fest="' + esc(f.name) + '">' + esc(f.name) + ' <span class="pk-card-fest-dev">' + esc(f.dev) + '</span> ›</button>';
-      }).join(' ') + '</div>';
+      h += '<div class="wsh-fests">' + fests.map(function (f) {
+        return '<button type="button" class="wsh-fest" data-fest="' + esc(f.name) + '">' + DIYA +
+          '<span class="wsh-fest-txt"><b lang="hi">' + esc(f.dev) + '</b><small>' + esc(f.name) + '</small></span>' +
+          '<span class="wsh-go" aria-hidden="true">›</span></button>';
+      }).join('') + '</div>';
     }
-    html += '<p class="pk-card-about">' + esc(g ? g.about : 'A day of the ' + t.paksha + ' paksha.') + '</p>';
 
+    /* tithis through the civil day, with end times */
+    h += '<h3 class="wsh-h">Tithi</h3><ol class="wsh-tl">';
     if (timeline.length) {
-      html += '<div class="pk-card-timeline">';
-      timeline.forEach(function (mk) {
-        html += '<span>' + esc(tithiInfo(mk.from).name) + ' → ' + esc(tithiInfo(mk.to).name) + ' at ' + fmtTime(mk.at) + '</span>';
+      var segs = [{ idx: timeline[0].from, from: null, to: timeline[0].at }];
+      timeline.forEach(function (mk, k) { segs.push({ idx: mk.to, from: mk.at, to: timeline[k + 1] ? timeline[k + 1].at : null }); });
+      segs.forEach(function (sg) {
+        var ti = tithiInfo(sg.idx);
+        var when = sg.from && sg.to ? fmtTime(sg.from) + ' – ' + fmtTime(sg.to) :
+          sg.to ? 'until ' + fmtTime(sg.to) : 'from ' + fmtTime(sg.from);
+        h += '<li><span class="wsh-tl-dev" lang="hi">' + pk(ti) + ' ' + TITHI_DEV[ti.name] + '</span>' +
+          '<span class="wsh-tl-en">' + esc(ti.paksha + ' ' + ti.name) + '</span><span class="wsh-tl-t">' + when + '</span></li>';
       });
-      html += '</div>';
     } else {
-      html += '<div class="pk-card-timeline"><span>' + esc(t.name) + ' runs through the whole day.</span></div>';
+      h += '<li><span class="wsh-tl-dev" lang="hi">' + pk(t) + ' ' + TITHI_DEV[t.name] + '</span>' +
+        '<span class="wsh-tl-en">' + esc(t.paksha + ' ' + t.name) + '</span><span class="wsh-tl-t">all day</span></li>';
     }
+    h += '</ol>';
+
+    /* panchang of the day */
+    var rows = [];
+    if (nak) rows.push(['Nakshatra', esc(nak.name) + ' <small>approx., at sunrise</small>']);
+    if (w && (timesFree || plusOn)) {
+      rows.push(['Sunrise', M.fmt(w.sunrise, city)]);
+      rows.push(['Sunset', M.fmt(w.sunset, city)]);
+      rows.push(['Rahu kaal', M.range(w.rahu[0], w.rahu[1], city) + ' <small>avoid</small>']);
+      rows.push(['Abhijit', M.range(w.abhijit[0], w.abhijit[1], city) + (w.weekday === 3 ? ' <small>avoided on Wednesday</small>' : '')]);
+    }
+    if (rows.length) {
+      h += '<dl class="wsh-grid">' + rows.map(function (rw) { return '<div><dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd></div>'; }).join('') + '</dl>';
+    }
+    if (w && !timesFree && !plusOn) {
+      h += '<button type="button" class="wsh-plus" id="pkCardPlus"><span>Sunrise, sunset and Rahu kaal for any date</span><b>Plus ›</b></button>';
+    } else if (!w && M) {
+      h += '<p class="wsh-note">Sun timings cannot be computed for ' + esc(city.name) + ' on this date.</p>';
+    }
+    if (w && (timesFree || plusOn)) h += '<p class="wsh-note">Sun times for ' + esc(city.name) + '. Change the city on Today.</p>';
+
+    if (g && g.important) {
+      h += '<div class="wsh-vrat"><h3 class="wsh-h">Vrat · ' + esc(r.primary.paksha + ' ' + r.primary.name) + '</h3><p>' + esc(g.fast) + '</p></div>';
+    }
+
+    /* actions */
+    h += '<div class="wsh-actions">' +
+      (fests.length ? '<button type="button" class="wsh-btn is-gold" id="pkCardFest">' + DIYA + '<span>Open festival</span></button>' : '') +
+      '<button type="button" class="wsh-btn" id="pkCardBell" data-iso="' + iso + '"></button>' +
+      (sad && window.dhSession ? '<button type="button" class="wsh-btn' + (fests.length ? '' : ' is-gold') + '" id="pkCardBegin"><span>Begin sadhana</span></button>' : '') +
+      '</div>';
 
     if (g) {
-      html += '<h4 class="pk-card-h">Rituals for the day</h4><ul class="pk-card-list">' +
-        g.rituals.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>';
-      html += '<h4 class="pk-card-h">Mantra jaap</h4>' +
-        '<div class="pk-card-jaap"><div class="pk-jaap-dev">' + esc(g.jaap.dev) + '</div>' +
-        '<div class="pk-jaap-line">' + esc(g.jaap.mantra) + ' × ' + g.jaap.count + '</div>' +
-        '<div class="pk-jaap-note">' + esc(g.jaap.note) + '</div></div>';
-      html += '<h4 class="pk-card-h">Fasting</h4><p class="pk-card-fast">' + esc(g.fast) + '</p>';
+      h += '<details class="wsh-more"><summary>Rituals, mantra jaap and fasting · <span lang="hi">' + esc(g.dev) + '</span></summary>' +
+        '<p class="wsh-about">' + esc(g.about) + '</p>' +
+        '<ul class="wsh-list">' + g.rituals.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+        '<div class="wsh-jaap"><p class="wsh-jaap-dev" lang="hi">' + esc(g.jaap.dev) + '</p>' +
+        '<p class="wsh-jaap-line">' + esc(g.jaap.mantra) + ' × ' + g.jaap.count + '</p>' +
+        '<p class="wsh-jaap-note">' + esc(g.jaap.note) + '</p></div>' +
+        '<p class="wsh-about"><b>Fasting.</b> ' + esc(g.fast) + '</p></details>';
     }
+    h += '<p class="wsh-note">Tithi computed on your device by the sunrise rule; times are in this device’s time zone and can differ from Drik Panchang by a few hours.</p>';
 
-    html += '<button class="pk-card-bell" id="pkCardBell" data-iso="' + iso + '"></button>';
-    html += '<div class="pk-card-note">Tithi computed on your device by the sunrise rule; boundaries can differ from Drik Panchang by a few hours.</div>';
-
-    card.innerHTML = html;
+    card.innerHTML = h;
+    card.setAttribute('aria-labelledby', 'pkCardTitle');
+    card.removeAttribute('aria-label');
+    lastCellIso = iso;
     overlay.hidden = false;
     card.scrollTop = 0;
+    requestAnimationFrame(function () { overlay.classList.add('is-open'); });
     paintBells();
-    document.getElementById('pkCardClose').addEventListener('click', closeCard);
-    card.querySelectorAll('.pk-card-festbtn').forEach(function (b) {
+    $('#pkCardClose', card).addEventListener('click', closeCard);
+    card.querySelectorAll('.wsh-fest').forEach(function (b) {
       b.addEventListener('click', function () {
         closeCard();
         if (window.dhFestival) window.dhFestival.open(b.dataset.fest, iso);
       });
     });
-    document.getElementById('pkCardBell').addEventListener('click', function () {
-      toggleReminder(iso, t.name, t.paksha, null);
+    var fb = $('#pkCardFest', card);
+    if (fb) fb.addEventListener('click', function () {
+      var f = pickFest(fests);
+      closeCard();
+      if (window.dhFestival && f) window.dhFestival.open(f.name, iso);
     });
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeCard(); }, { once: true });
+    $('#pkCardBell', card).addEventListener('click', function () { toggleReminder(iso, t.name, t.paksha, null); });
+    var bb = $('#pkCardBegin', card);
+    if (bb) bb.addEventListener('click', function () {
+      closeCard();
+      window.dhSession.start(sad.room.id, { aartiId: sad.aartiId, title: sad.title });
+    });
+    var pb = $('#pkCardPlus', card);
+    if (pb) pb.addEventListener('click', function () { closeCard(); if (window.dhPlus && window.dhPlus.open) window.dhPlus.open(); });
+    $('#pkCardClose', card).focus({ preventScroll: true });
   }
 
   function closeCard() {
     var overlay = document.getElementById('pkCardOverlay');
-    if (overlay) overlay.hidden = true;
+    if (!overlay || overlay.hidden) return;
+    overlay.classList.remove('is-open');
+    overlay.hidden = true;
+    var lv = liveLeaf(), c = lv && lastCellIso ? lv.querySelector('.wp-day[data-iso="' + lastCellIso + '"]') : null;
+    if (c) c.focus({ preventScroll: true });
+  }
+
+  function select(iso) {
+    selectedIso = iso;
+    var lv = liveLeaf();
+    if (lv) decorate(lv);
   }
 
   /* ---------- calendar tab wiring (the panchang lives in the Calendar tab now) ---------- */
@@ -650,16 +1071,50 @@
     if (window.dhTab) window.dhTab('calendar');
   }
   function showMonth(y, m) {
+    if (busy) return;
     view = { y: y, m: m };
     renderMonth(y, m);
+    prefetch(y, m);
   }
 
   function init() {
-    var prev = document.getElementById('pkPrev');
-    var next = document.getElementById('pkNext');
-    if (prev) prev.addEventListener('click', function () { flip(-1); });
-    if (next) next.addEventListener('click', function () { flip(1); });
+    var s = stageEl();
+    var wall = document.getElementById('panchangSection');
+    if (s) {
+      s.addEventListener('click', function (e) {
+        if (busy) return;
+        var act = e.target.closest('[data-act]');
+        if (act && !act.disabled) {
+          if (act.dataset.act === 'prev') flip(-1);
+          else if (act.dataset.act === 'next') flip(1);
+          else if (act.dataset.act === 'pick') { if (pickerOpen()) closePicker(true); else openPicker(); }
+          return;
+        }
+        var c = e.target.closest('.wp-day[data-iso]');
+        if (c) { select(c.dataset.iso); openCard(c.dataset.iso); }
+      });
+      wireDrag(s);
+    }
+    if (wall) {
+      wall.addEventListener('keydown', function (e) {
+        if (pickerOpen() || e.altKey || e.ctrlKey || e.metaKey) return;
+        var tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); flip(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); flip(1); }
+      });
+    }
+    var overlay = document.getElementById('pkCardOverlay');
+    if (overlay) {
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) closeCard(); });
+      overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCard(); });
+    }
+    document.addEventListener('dh-plus-change', function () {
+      if (overlay && !overlay.hidden && lastCellIso) openCard(lastCellIso);
+    });
     renderMonth(view.y, view.m);
+    announce(view.y, view.m);
+    prefetch(view.y, view.m);
 
     /* local fallback: surface a due reminder when the app is open */
     var todayISO = isoOf(now.getFullYear(), now.getMonth(), now.getDate());
@@ -667,15 +1122,15 @@
     if (due.length) {
       var r = due[0];
       setTimeout(function () {
-        toast('🌙 Today is ' + r.paksha + ' ' + r.tithi + ' — your reminder. Open the Calendar for today\u2019s rituals.');
+        toast('🌙 Today is ' + r.paksha + ' ' + r.tithi + ' — your reminder. Open the Calendar for today’s rituals.');
       }, 2500);
     }
   }
 
   window.dhPanchang = {
-    tithiAt: tithiAt, tithiInfo: tithiInfo, monthData: monthData,
+    tithiAt: tithiAt, tithiInfo: tithiInfo, monthData: monthData, elongationAt: elongationAt,
     tithiTimeline: tithiTimeline, open: openPanchang, showMonth: showMonth, cardGuide: cardGuide, _flip: flip, _view: function () { return view; },
-    _renderMonth: renderMonth, _openCard: openCard, _toggleReminder: toggleReminder,
+    _goTo: goTo, _renderMonth: renderMonth, _openCard: openCard, _toggleReminder: toggleReminder,
     _loadReminders: loadReminders, _cardGuide: cardGuide
   };
 
