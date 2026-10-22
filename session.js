@@ -215,11 +215,10 @@
       '<button type="button" class="sd-row" id="sdJapa"><span class="sd-row-ic" aria-hidden="true">📿</span>' +
         '<span class="sd-row-main"><span class="sd-row-dev">जाप माला</span><span class="sd-row-en">Japa counter</span><small>A digital mala: 11, 21 or 108 beads, tap or listen</small></span><span class="cl-go" aria-hidden="true">›</span></button>' +
       '<button type="button" class="sd-row" id="sdFocus"><span class="sd-row-ic" aria-hidden="true">🪔</span>' +
-        '<span class="sd-row-main"><span class="sd-row-dev">एकाग्र</span><span class="sd-row-en">Focus mode</span><small>One verse at a time; also on every prayer</small></span><span class="cl-go" aria-hidden="true">›</span></button>';
+        '<span class="sd-row-main"><span class="sd-row-dev">एकाग्र</span><span class="sd-row-en">Focus mode</span><small>Choose any aarti, chalisa or mantra; one verse at a time</small></span><span class="cl-go" aria-hidden="true">›</span></button>';
     host.querySelector('#sdJapa').addEventListener('click', function () { window.dhOpenSheet('japaSection'); });
     host.querySelector('#sdFocus').addEventListener('click', function () {
-      var id = (window.dhToday && window.dhToday.ritualPrayerId) ? window.dhToday.ritualPrayerId() : 'hanuman-chalisa';
-      if (window.dhOpenFocus) window.dhOpenFocus(id);
+      if (window.dhOpenFocusPicker) window.dhOpenFocusPicker();
     });
   }
 

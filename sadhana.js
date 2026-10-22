@@ -170,8 +170,7 @@
           }
         }
       }
-      const fid = window.dhToday && window.dhToday.ritualPrayerId ? window.dhToday.ritualPrayerId() : 'hanuman-chalisa';
-      if (window.dhOpenFocus) window.dhOpenFocus(fid);
+      if (window.dhOpenFocusPicker) window.dhOpenFocusPicker();
     }
   }
 

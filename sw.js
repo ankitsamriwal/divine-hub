@@ -1,9 +1,9 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v53';
+const CACHE = 'divine-hub-v54';
 const CORE = [
   './',
   './index.html',
-  './styles.css?v=53',
+  './styles.css?v=54',
   './config.js?v=48',
   './data.js?v=46',
   './data2.js?v=46',
@@ -19,9 +19,9 @@ const CORE = [
   './audio.js?v=49',
   './aura.js?v=51',
   './app.js?v=51',
-  './focus.js?v=46',
+  './focus.js?v=54',
   './journeys.js?v=50',
-  './sadhana.js?v=50',
+  './sadhana.js?v=54',
   './plus.js?v=48',
   './sankalp.js?v=50',
   './quizzes.js?v=46',
@@ -34,7 +34,7 @@ const CORE = [
   './sections.js?v=50',
   './ambience.js?v=46',
   './deities.js?v=50',
-  './session.js?v=51',
+  './session.js?v=54',
   './calendar.js?v=50',
   './library.js?v=50',
   './today.js?v=50',

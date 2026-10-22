@@ -4,6 +4,7 @@
   'use strict';
 
   const LS_KEY = 'divinehub_focus_v1';
+  const LAST_KEY = 'divinehub_focus_last_v1';
 
   let overlay = null;
   let prayer = null;
@@ -15,7 +16,7 @@
   }
   function savePos() {
     const all = loadPos();
-    if (prayer) { all[prayer.id] = idx; localStorage.setItem(LS_KEY, JSON.stringify(all)); }
+    if (prayer) { all[prayer.id] = idx; try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) {} }
   }
 
   function build() {
@@ -30,7 +31,16 @@
           <span class="fv-deity" id="fvDeity"></span>
           <span class="fv-title" id="fvTitle"></span>
         </div>
+        <button class="fv-change" id="fvChange" aria-haspopup="dialog" aria-label="Choose a different prayer">Change ▾</button>
         <button class="fv-close" id="fvClose" aria-label="Close focus mode">✕</button>
+      </div>
+      <div class="fv-picker" id="fvPicker" role="dialog" aria-modal="true" aria-labelledby="fvPickTitle" hidden>
+        <div class="fv-pick-head">
+          <h2 class="fv-pick-title" id="fvPickTitle"><span>एकाग्र</span> Choose what to chant</h2>
+          <button class="fv-close" id="fvPickClose" aria-label="Close the list">✕</button>
+        </div>
+        <input type="search" class="fv-pick-search" id="fvPickSearch" placeholder="Search aarti, chalisa, mantra, deity" aria-label="Search prayers">
+        <div class="fv-pick-list" id="fvPickList"></div>
       </div>
       <div class="fv-progress"><div class="fv-progress-fill" id="fvFill"></div></div>
       <div class="fv-stage" id="fvStage">
@@ -54,11 +64,22 @@
     document.body.appendChild(overlay);
 
     document.getElementById('fvClose').addEventListener('click', close);
+    document.getElementById('fvChange').addEventListener('click', showPicker);
+    document.getElementById('fvPickClose').addEventListener('click', hidePicker);
+    document.getElementById('fvPickSearch').addEventListener('input', e => renderPicker(e.target.value));
+    document.getElementById('fvPickList').addEventListener('click', e => {
+      const b = e.target.closest('[data-pid]');
+      if (b) { hidePicker(); open(b.dataset.pid); }
+    });
     document.getElementById('fvPrev').addEventListener('click', () => step(-1));
     document.getElementById('fvNext').addEventListener('click', () => step(1));
     document.getElementById('fvAccBtn').addEventListener('click', toggleMeaning);
     document.addEventListener('keydown', e => {
       if (overlay.hidden) return;
+      if (!document.getElementById('fvPicker').hidden) {
+        if (e.key === 'Escape') { hidePicker(); if (!prayer) close(); }
+        return;
+      }
       if (e.key === 'Escape') close();
       else if (e.key === 'ArrowLeft') step(-1);
       else if (e.key === 'ArrowRight') step(1);
@@ -66,13 +87,78 @@
 
     // swipe
     let tx = null;
-    overlay.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+    overlay.addEventListener('touchstart', e => { tx = document.getElementById('fvPicker').hidden ? e.touches[0].clientX : null; }, { passive: true });
     overlay.addEventListener('touchend', e => {
       if (tx === null) return;
       const dx = e.changedTouches[0].clientX - tx;
       if (Math.abs(dx) > 48) step(dx < 0 ? 1 : -1);
       tx = null;
     }, { passive: true });
+  }
+
+  /* ---------- prayer picker: the devotee chooses what to chant ---------- */
+  const TYPE_ORDER = ['Aarti', 'Chalisa', 'Stotra', 'Stotram', 'Vandana', 'Mantra', 'Upanishad'];
+  function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function lastId() { try { return localStorage.getItem(LAST_KEY); } catch (e) { return null; } }
+
+  function renderPicker(q) {
+    const term = String(q || '').trim().toLowerCase();
+    const all = (typeof PRAYERS !== 'undefined' ? PRAYERS : []).filter(p => p.stanzas && p.stanzas.length);
+    const match = p => !term || [p.title, p.titleDev, p.deity, p.deityDev, p.type].join(' ').toLowerCase().includes(term);
+    const list = all.filter(match);
+    const host = document.getElementById('fvPickList');
+    if (!list.length) { host.innerHTML = '<p class="fv-pick-empty">No prayer matches. Try a deity name such as Hanuman or Lakshmi.</p>'; return; }
+    const current = prayer ? prayer.id : lastId();
+    let html = '';
+    const recent = !term && current ? all.find(p => p.id === current) : null;
+    if (recent) {
+      html += '<div class="fv-pick-group"><div class="fv-pick-gh">Continue</div>' + row(recent, true) + '</div>';
+    }
+    const byDeity = {};
+    list.forEach(p => { (byDeity[p.deity] = byDeity[p.deity] || { dev: p.deityDev, items: [] }).items.push(p); });
+    Object.keys(byDeity).forEach(d => {
+      const g = byDeity[d];
+      g.items.sort((a, b) => (TYPE_ORDER.indexOf(a.type) + 99) % 99 - (TYPE_ORDER.indexOf(b.type) + 99) % 99 || a.title.localeCompare(b.title));
+      html += '<div class="fv-pick-group"><div class="fv-pick-gh"><span>' + esc(g.dev) + '</span> ' + esc(d) + '</div>' + g.items.map(p => row(p, false)).join('') + '</div>';
+    });
+    host.innerHTML = html;
+    function row(p, isRecent) {
+      const prog = window.dhFocusProgress ? window.dhFocusProgress(p.id) : null;
+      const note = prog && prog.index > 0 ? 'Verse ' + (prog.index + 1) + ' of ' + prog.total : p.stanzas.length + (p.stanzas.length === 1 ? ' verse' : ' verses');
+      const on = prayer && prayer.id === p.id;
+      return '<button type="button" class="fv-pick-row' + (on ? ' on' : '') + '" data-pid="' + esc(p.id) + '"' + (on ? ' aria-current="true"' : '') + '>' +
+        '<span class="fv-pick-main"><span class="fv-pick-dev">' + esc(p.titleDev) + '</span><span class="fv-pick-en">' + esc(p.title) + '</span></span>' +
+        '<span class="fv-pick-meta"><span class="fv-pick-type">' + esc(p.type) + '</span><small>' + esc(note) + '</small></span></button>';
+    }
+  }
+
+  function showPicker() {
+    if (!overlay) build();
+    const s = document.getElementById('fvPickSearch');
+    s.value = '';
+    renderPicker('');
+    document.getElementById('fvPicker').hidden = false;
+    overlay.classList.add('fv-picking');
+    const on = document.querySelector('#fvPickList .fv-pick-row.on') || document.querySelector('#fvPickList .fv-pick-row');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+    setTimeout(() => (on || s).focus({ preventScroll: true }), 30);
+  }
+  function hidePicker() {
+    if (!overlay) return;
+    document.getElementById('fvPicker').hidden = true;
+    overlay.classList.remove('fv-picking');
+    const b = document.getElementById('fvChange');
+    if (b && prayer) b.focus({ preventScroll: true });
+  }
+
+  /* Opens Focus mode on the chooser, so the devotee picks the prayer instead of getting a default */
+  function openPicker() {
+    if (!overlay) build();
+    prayer = null;
+    overlay.hidden = false;
+    overlay.classList.add('fv-empty');
+    document.body.style.overflow = 'hidden';
+    showPicker();
   }
 
   function render() {
@@ -119,6 +205,8 @@
     if (!p) return;
     if (!overlay) build();
     prayer = p;
+    overlay.classList.remove('fv-empty');
+    try { localStorage.setItem(LAST_KEY, p.id); } catch (e) {}
     meaningOpen = false;
     document.getElementById('fvAccBody').hidden = true;
     document.getElementById('fvAccBtn').setAttribute('aria-expanded', 'false');
@@ -134,6 +222,8 @@
 
   function close() {
     if (!overlay) return;
+    document.getElementById('fvPicker').hidden = true;
+    overlay.classList.remove('fv-picking', 'fv-empty');
     overlay.hidden = true;
     document.body.style.overflow = '';
     if (window.dhPrayerOpen && window.dhPrayerOpen() && prayer) {
@@ -144,6 +234,7 @@
   }
 
   window.dhOpenFocus = open;
+  window.dhOpenFocusPicker = openPicker;
   window.dhFocusProgress = function (id) {
     const p = PRAYERS.find(x => x.id === id);
     const saved = loadPos()[id];
