@@ -34,6 +34,7 @@
       }
     });
     current = t;
+    try { document.documentElement.setAttribute('data-tab', t); } catch (e) {}
     storeTab(t);
     if (!opts.keepHash) setHash(t);
     if (changed) {

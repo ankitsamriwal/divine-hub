@@ -9,7 +9,7 @@
 <meta name="description" content="A serene home for sacred Hindu prayers — aartis, chalisas, stotrams and mantras with Devanagari lyrics, transliteration, full English meaning, and audio narration.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Divine Hub">
 <meta property="og:title" content="Divine Hub — Aartis, Stotrams & Mantras">
@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Divine Hub">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css?v=50">
+<link rel="stylesheet" href="styles.css?v=53">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪔</text></svg>">
 </head>
 <body>
@@ -78,18 +78,23 @@
     <h2 class="tab-title"><span class="tab-title-dev">पंचांग</span> Calendar</h2>
     <p class="tab-sub">Tithis, festivals and vrat days. Tap a date for its rituals; tap a festival for muhurat, puja and aarti.</p>
   </header>
-  <div class="cal-month panchang-sheet" id="panchangSection">
-    <div class="pk-nav">
-      <button id="pkPrev" class="pk-nav-btn" aria-label="Previous month">‹</button>
-      <span id="pkMonthLabel" class="pk-month-label"></span>
-      <button id="pkNext" class="pk-nav-btn" aria-label="Next month">›</button>
+  <div class="wp" id="panchangSection">
+    <div class="wp-hanger" aria-hidden="true">
+      <svg class="wp-cord" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 33 100 4 200 33"/></svg>
+      <span class="wp-nail"></span>
+      <span class="wp-bar"><i></i><i></i></span>
     </div>
-    <div class="pk-book">
-      <div class="pk-page" id="pkPage"></div>
-    </div>
-    <div class="pk-legend">
-      <span>● Purnima</span><span>○ Amavasya</span><span>☾ Ekadashi</span><span>🪔 festival</span><span>🔔 reminder set</span>
-    </div>
+    <div class="wp-stage" id="pkStage" role="group" aria-roledescription="wall calendar" aria-label="Month calendar. Left and right arrow keys change the month; swipe to turn the page."></div>
+    <p class="wp-key" aria-label="Key">
+      <span><svg viewBox="-12 -12 24 24" width="11" height="11" aria-hidden="true"><circle r="10" class="wm-full"/></svg>Purnima</span>
+      <span><svg viewBox="-12 -12 24 24" width="11" height="11" aria-hidden="true"><circle r="9.4" class="wm-new"/></svg>Amavasya</span>
+      <span><svg viewBox="-12 -12 24 24" width="11" height="11" aria-hidden="true"><circle r="10" class="wm-dark"/><path class="wm-lit" d="M0,-10A10,10 0 0 1 0,10A4,10 0 0 0 0,-10Z"/></svg>Shukla</span>
+      <span><svg viewBox="-12 -12 24 24" width="11" height="11" aria-hidden="true"><circle r="10" class="wm-dark"/><path class="wm-lit" d="M0,-10A10,10 0 0 0 0,10A4,10 0 0 1 0,-10Z"/></svg>Krishna</span>
+      <span><svg class="wp-leaf-g" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M1.6 10.4C1.6 5.2 4.8 1.6 10.6 1.4 10.6 7 7.2 10.4 1.6 10.4Z"/><path class="vein" d="M1.6 10.4 7.6 4.4"/></svg>Ekadashi</span>
+      <span><svg class="wp-diya" viewBox="0 0 16 14" width="12" height="11" aria-hidden="true"><path class="fl" d="M8 .6C9.9 3.3 10 5 8 6.9 6 5 6.1 3.3 8 .6Z"/><path class="bw" d="M1.2 7.8H14.8C14 11.2 11.3 13 8 13S2 11.2 1.2 7.8Z"/></svg>Festival</span>
+      <span><i class="wp-chg" aria-hidden="true"></i>Tithi changes in the day</span>
+    </p>
+    <p class="wp-sr" id="pkLive" aria-live="polite"></p>
   </div>
   <div class="cal-chips" id="calChips" role="group" aria-label="Filter the list">
     <button type="button" class="cal-chip" data-f="festival" aria-pressed="false">🪔 Festivals</button>
@@ -286,8 +291,8 @@
   </div>
 </section>
 
-<div id="pkCardOverlay" class="pk-card-overlay" hidden>
-  <div class="pk-card" id="pkCard" role="dialog" aria-label="Tithi details"></div>
+<div id="pkCardOverlay" class="wsh-ov" hidden>
+  <div class="wsh" id="pkCard" role="dialog" aria-modal="true" aria-label="Day details"></div>
 </div>
 
 <div id="chatPanel" class="chat-panel" role="dialog" aria-label="Divine Guide" hidden>
@@ -342,7 +347,8 @@ if ('serviceWorker' in navigator) {
 <script src="guides.js?v=46"></script>
 <script src="why.js?v=46"></script>
 <script src="audio.js?v=49"></script>
-<script src="app.js?v=50"></script>
+<script src="aura.js?v=51"></script>
+<script src="app.js?v=51"></script>
 <script src="focus.js?v=46"></script>
 <script src="journeys.js?v=50"></script>
 <script src="sadhana.js?v=50"></script>
@@ -352,17 +358,17 @@ if ('serviceWorker' in navigator) {
 <script src="almanac.js?v=50"></script>
 <script src="sandhya.js?v=50"></script>
 <script src="japa.js?v=50"></script>
-<script src="panchang.js?v=50"></script>
+<script src="panchang.js?v=51"></script>
 <script src="muhurat.js?v=47"></script>
 <script src="diwali.js?v=50"></script>
 <script src="sections.js?v=50"></script>
 <script src="ambience.js?v=46"></script>
 <script src="deities.js?v=50"></script>
-<script src="session.js?v=50"></script>
+<script src="session.js?v=51"></script>
 <script src="calendar.js?v=50"></script>
 <script src="library.js?v=50"></script>
 <script src="today.js?v=50"></script>
-<script src="shell.js?v=50"></script>
+<script src="shell.js?v=52"></script>
 <script src="backnav.js?v=50"></script>
 </body>
 </html>

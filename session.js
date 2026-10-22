@@ -65,6 +65,7 @@
 
   function teardownStep() {
     if (window.dhSpeak) window.dhSpeak.stop();
+    if (window.dhAura) window.dhAura.stop(null, true);
     if (window.dhJapa) window.dhJapa.unmount();
   }
 
