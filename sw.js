@@ -1,5 +1,5 @@
 /* Divine Hub service worker — offline-capable shell */
-const CACHE = 'divine-hub-v54';
+const CACHE = 'divine-hub-v55';
 const CORE = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const CORE = [
   './data6.js?v=46',
   './data7.js?v=46',
   './data8.js?v=46',
+  './data9.js?v=55',
   './festivals.js?v=46',
   './guides.js?v=46',
   './why.js?v=46',
